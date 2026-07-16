@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <map>
 #include <unordered_map>
-#include <cmath>
 #include <mutex>
+#include "utilities_math.hpp"
 
 enum badRecordType
 {
@@ -17,8 +17,6 @@ enum badRecordType
 };
 
 inline std::unordered_map<char, char> Nmap{{'A', 'T'}, {'T', 'A'}, {'G', 'C'}, {'C', 'G'}, {'Y', 'Y'}, {'R', 'R'}, {'a', 't'}, {'t', 'a'}, {'c', 'g'}, {'g', 'c'}, {'N', 'N'}, {'-', '-'}};
-
-
 
 enum flagBits
 {
@@ -61,10 +59,14 @@ struct AlignLine_Data_t
     options_map_t options_map;
 };
 
+/****** 
+ * @brief struct of reconstructed reference and alignment data
+ * @details first var is reference, the second one is read's alignment data
+*/
 struct alignnmentData_t
 {
-    std::string ref_seq;
-    std::string alignment;
+    std::string ref_seq; ///<reconstructed reference sequence
+    std::string alignment; ///<read's alignment data
 };
 
 struct real_data_t
@@ -87,16 +89,6 @@ struct statics_dicts_t
     // 互斥锁保护所有字典的并发访问
     mutable std::mutex dict_mutex;
 };
-
-static double prob2phred(double P)
-{
-    return -10.0 * std::log10(P);
-}
-
-static double phred2prob(double Q)
-{
-    return std::pow(10.0, -Q / 10.0);
-}
 
 static std::string revcomp(const std::string &input)
 {
@@ -138,11 +130,6 @@ static std::vector<std::string> split(const std::string &str)
     return tokens;
 }
 
-static double geometric(double pval,double kval,double constant)
-{
-    return (std::pow((1.0 - pval),(kval - 1.0))) * pval + constant;
-}
-
 static bool isStringDigit(const std::string &str)
 {
     return std::all_of(str.begin(), str.end(), ::isdigit);
@@ -151,19 +138,6 @@ static bool isStringDigit(const std::string &str)
 static bool isStringAlphabet(const std::string &str)
 {
     return std::all_of(str.begin(),str.end(),::isalpha);
-}
-
-static double py_round(double value, int ndigits = 0)
-{
-    if (std::isnan(value) || std::isinf(value) || value == 0.0)
-    {
-        return value;
-    }
-
-    long double factor = std::pow(10.0L, static_cast<long double>(ndigits));
-    long double shifted = static_cast<long double>(value) * factor;
-    long double rounded = std::nearbyint(shifted);
-    return static_cast<double>(rounded / factor);
 }
 
 static std::string strip(const std::string &str, const char &delimiter)

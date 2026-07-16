@@ -85,8 +85,8 @@ bool validAndParse(const std::string &Line,AlignLine_Data_t &data)
 
 /*******
  * @brief if MD list have nothing, then skip this line. alignment string shows where don't match the reference sequence
- * @param &data: parsedData
- * @param &alignmentData: the struct that need to output
+ * @param[in] &data: parsedData
+ * @param[out] &alignmentData: the struct that need to output
  * @return -1 if the MD:Z is not exists, skip this line
  * @return 0 like normal
  *******/

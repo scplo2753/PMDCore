@@ -1,3 +1,12 @@
+/**
+ * @file arguments.hpp
+ * @author 2753
+ * @brief this file is used for define cmdline arguments and implement some basic filter functions
+ * @version 0.1
+ * @date 2026-07-17
+ * 
+ * 
+ */
 #pragma once
 #include "argparse/argparse.hpp"
 #include "utility.hpp"
@@ -33,6 +42,6 @@ void initCMDParse(int argc, char *argv[]);
 // need for implement
 void function_basecomposition(parsedData &data, alignnmentData_t &real_alignmentData);
 
-bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, std::string_view qual_seq);
+bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, uint read_len, std::string_view qual_seq);
 
-bool function_basicTerminalFilter(std::string_view real_read, std::string_view real_ref_seq, std::string_view qual_seq);
+bool function_basicTerminal(std::string_view real_read, std::string_view real_ref_seq, std::string_view qual_seq);

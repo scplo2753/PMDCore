@@ -1,3 +1,4 @@
+
 #include <cassert>
 #include <iostream>
 #include <fstream>
@@ -224,7 +225,7 @@ static void buffered_output_line(const std::string &line)
     }
 }
 
-/*
+/***
 * @brief the function that enqueue to thread pool
 */
 void process_single_line(
@@ -306,7 +307,7 @@ int main(int argc, char *argv[])
         bool isReverse=false;
         if ((std::stoi(raw_data.FLAG) & 16) == 1)
         {
-            isReverse=true;
+            isReverse = true;
         }
 
         if (FLAGS_noreverse)
@@ -316,7 +317,7 @@ int main(int argc, char *argv[])
                 continue;
             }
         }
-        
+
         // end
         
         double LR=0.0f;
@@ -337,10 +338,33 @@ int main(int argc, char *argv[])
                 continue;
         }
 
+        /// @todo imple if(options.maskterminaldeaminations or options.maskterminalbases)
         if (!isGCcontentInRange(alignnmentData))
             continue;
         if (!badRefSeq_Vailder(alignnmentData.ref_seq, line))
             continue;
+        /// @todo imple basecomposition param
+        /// @todo imple basic param
+        /// @todo imple terminal param
+        if (IS_USED_basic && FLAGS_basic > 0)
+        {
+            if (function_basicFilter(alignnmentData.ref_seq, data_ptr.getReadSeq(), data_ptr.getReadSeq().size(), data_ptr.getQualityScores()))
+            {
+                std::cout << line << std::endl;
+            }
+        }
+        if (FLAGS_terminal)
+        {
+            if (function_basicTerminal(data_ptr.getReadSeq(), alignnmentData.ref_seq, data_ptr.getQualityScores()))
+            {
+                std::cout << line << std::endl;
+                continue;
+            }
+        }
+        /// @todo imple first param
+        /// @todo imple Leipzigsimple
+        /// @todo imple customterminus
+        /// @todo imple if options.perc_identity > 0.01 or options.printalignments:
 
         // 注意：需要复制 raw_data 和 alignnmentData，避免栈空间问题
         WorkItem work_item = {raw_data, data_ptr, alignnmentData};

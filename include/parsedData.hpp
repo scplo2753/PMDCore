@@ -28,7 +28,6 @@ public:
 
     // CIGAR functions
     std::vector<std::pair<char, std::string>> getCIGARList();
-
     std::vector<uint> getInsertionList() { return getOpListInCIGAR('I'); }
     std::vector<uint> getSoftClipList() { return getOpListInCIGAR('S'); }
     std::vector<uint> getMatchList() { return getOpListInCIGAR('M'); }

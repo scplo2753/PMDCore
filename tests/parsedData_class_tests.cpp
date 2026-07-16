@@ -2,6 +2,7 @@
 #include "utility.hpp"
 #include "seqProcedures.hpp"
 #include "parsedData.hpp"
+#include "arguments.hpp"
 
 using std::string;
 using std::string_view;
@@ -92,6 +93,34 @@ TEST(PasedDataClassTest,test_of_getCIGARList_with_standard_record)
 {
     std::vector<std::pair<char,string>> expected{{'M', "3"},{'D', "1"},{'X', "4"}, {'M', "3"}};
     EXPECT_EQ(standardRecord.getCIGARList(), expected);
+}
+
+TEST(ArgumentsFunctionsTest, BasicFilterReturnsTrueForCpGMismatch)
+{
+    FLAGS_basic = 2;
+    FLAGS_CpG = true;
+    FLAGS_requirebaseq = 0;
+
+    EXPECT_TRUE(function_basicFilter("CGG", "TGG", 3, "AAA"));
+}
+
+TEST(ArgumentsFunctionsTest, BasicFilterReturnsFalseForNonMatchingBases)
+{
+    FLAGS_basic = 2;
+    FLAGS_CpG = true;
+    FLAGS_requirebaseq = 0;
+
+    EXPECT_FALSE(function_basicFilter("CCG", "CCG", 3, "!!!"));
+}
+
+TEST(ArgumentsFunctionsTest, BasicFilterHandlesEmptyInputSafely)
+{
+    FLAGS_basic = 2;
+    FLAGS_CpG = true;
+    FLAGS_requirebaseq = 0;
+
+    EXPECT_FALSE(function_basicFilter("", "", 0, ""));
+    EXPECT_FALSE(function_basicTerminal("", "", ""));
 }
 
 TEST(ParsedDataClassTest,test_of_getOpListInCIGAR)

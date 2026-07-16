@@ -110,51 +110,89 @@ void function_basecomposition(parsedData &data, alignnmentData_t &real_alignment
     // statics of 5' end
 }
 
-// if return true, display currespond line
-bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, std::string_view qual_seq)
+/**
+ * @brief Active if FLAGS_basic is set, corresponding to the first n bases of read, check if there is C>T mismatch with reference sequence and have sufficient base quality
+ * 
+ * @param[in] real_ref_seq real reference sequence
+ * @param[in] real_read real read
+ * @param[in] read_len length of read
+ * @param[in] qual_seq  quality scores
+ * @return true if first n bases have C>T mismatch with base and have sufficient base quality
+ * @return false 
+ */
+bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, uint read_len, std::string_view qual_seq)
 {
     if (!(FLAGS_basic > 0))
     {
         return false;
     }
-    int limit = std::min<int>({(int)real_ref_seq.size(), (int)real_read.size(), FLAGS_basic});
-    for (int pos = 0; pos < limit; ++pos)
+
+    const int limit = std::min<int>({static_cast<int>(real_ref_seq.size()), static_cast<int>(real_read.size()), FLAGS_basic});
+    for (uint pos = 0; pos < limit; ++pos)
     {
-        if (real_read[pos] == 'N' ||
-            real_ref_seq[pos] == 'N' ||
-            real_read[pos] == '-' ||
-            real_ref_seq[pos] == '-')
-            return false;
-        if (real_ref_seq[pos] == 'C' && real_read[pos] == 'T' && qual_seq[pos] - 33 > FLAGS_requirebaseq)
+        if (pos >= read_len)
         {
-            if (FLAGS_CpG)
-            {
-                if (pos + 1 < real_ref_seq.size() && real_ref_seq[pos + 1] == 'G')
-                    return true;
-            }
-            else
+            return false;
+        }
+
+        const char read_base = real_read[pos];
+        const char ref_base = real_ref_seq[pos];
+        const char qual_char = pos < qual_seq.size() ? qual_seq[pos] : '\0';
+
+        if (read_base == 'N' || ref_base == 'N' || read_base == '-' || ref_base == '-')
+        {
+            return false;
+        }
+
+        const bool quality_ok = qual_char != '\0' && (qual_char - 33) > FLAGS_requirebaseq;
+        const bool is_ct_mismatch = ref_base == 'C' && read_base == 'T';
+
+        if (FLAGS_CpG)
+        {
+            if (is_ct_mismatch && quality_ok && pos + 1 < real_ref_seq.size() && real_ref_seq[pos + 1] == 'G')
             {
                 return true;
             }
         }
+        else if (is_ct_mismatch && quality_ok)
+        {
+            return true;
+        }
     }
+
     return false;
 }
 
-bool function_basicTerminalFilter(std::string_view real_read, std::string_view real_ref_seq, std::string_view qual_seq)
+/**
+ * @brief Active if FLAGS_terminal is set, prints the SAM line if a C>T mismatch with sufficient base quality is observed in the first and last base
+ * 
+ * @param[in] real_read real read
+ * @param[in] real_ref_seq read reference sequence
+ * @param[in] qual_seq quality scores
+ * @return true if a C>T mismatch with sufficient base quality is observed in the first and last base
+ * @return false 
+ */
+bool function_basicTerminal(std::string_view real_read, std::string_view real_ref_seq, std::string_view qual_seq)
 {
+    if (real_read.empty() || real_ref_seq.empty() || qual_seq.empty())
+    {
+        return false;
+    }
+
     const int threshold = FLAGS_requirebaseq + 33;
-    char a = real_read[0];
-    char b = real_ref_seq[0];
-    if (a == 'T' && b == 'C' && (qual_seq[0] > threshold)) [[unlikely]]
+
+    if (real_ref_seq[0] == 'C' && real_read[0] == 'T' && qual_seq[0] > threshold)
     {
         return true;
     }
-    a = real_read.back();
-    b = real_ref_seq.back();
-    if (a == 'A' && b == 'G' && (*qual_seq.rbegin() > threshold)) [[unlikely]]
+
+    const char last_read = real_read.back();
+    const char last_ref = real_ref_seq.back();
+    const char last_qual = qual_seq.back();
+    if (last_ref == 'G' && last_read == 'A' && last_qual > threshold)
     {
         return true;
     }
+
     return false;
 }

@@ -16,49 +16,49 @@ bool isLegalData(const AlignLine_Data_t &data)
 }
 
 /****
-* @brief parse the raw string to the struct of tokens
+* @brief parse the raw string to the struct of fields
 * @related AlignLine_data_t
 * @return return -1 if line is illegal, otherwise return 0
 *****/
-int splitOneLine(const std::string &line, AlignLine_Data_t &data)
+int splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, AlignLine_Data_t &data)
 {
-    std::vector<std::string> tokens(split(line));
+    std::vector<std::string> fields(split(line));
     
-    if (tokens.size() < 11)
+    if (fields.size() < 11)
         return BAD_RECORD_HAVE_EMPTY_FIELD;
     
-    for(auto &token : tokens)
+    for(auto &field: fields)
     {
-        if(token.empty())
+        if(field.empty())
         {
             std::cout << "Warning: Empty field detected in the input data. This line will be skipped." << std::endl;
             return BAD_RECORD_HAVE_EMPTY_FIELD;
         }
     }
 
-    //begin to parse the tokens into the struct
-    data.QNAME= tokens[0];
+    //begin to parse the fields into the struct
+    data.QNAME= fields[0];
 
-    if (tokens[1].find_first_not_of("0123456789") != std::string::npos)
+    if (fields[1].find_first_not_of("0123456789") != std::string::npos)
         return BAD_RECORD_ILLEGAL_FLAG;
-    data.FLAG = tokens[1];
+    data.FLAG = fields[1];
 
-    data.RNAME = tokens[2];
+    data.RNAME = fields[2];
 
-    if (!isStringDigit(tokens[3])|| std::stoi(tokens[3]) < 0)
+    if (!isStringDigit(fields[3])|| std::stoi(fields[3]) < 0)
         return BAD_RECORD_ILLEGAL_POS;
-    data.POS = std::stoi(tokens[3]);
+    data.POS = std::stoi(fields[3]);
 
-    if (!isStringDigit(tokens[4]) || std::stoi(tokens[4]) < 0 || std::stoi(tokens[4]) > 255)
+    if (!isStringDigit(fields[4]) || std::stoi(fields[4]) < 0 || std::stoi(fields[4]) > 255)
         return BAD_RECORD_ILLEGAL_MAPQ;
-    data.MAPQ = std::stoi(tokens[4]);
+    data.MAPQ = std::stoi(fields[4]);
 
-    data.cigar = tokens[5];
-    data.read_seq = tokens[9];
-    data.quality_scores = tokens[10];
-    for (size_t i = 11; i < tokens.size(); ++i)
+    data.cigar = fields[5];
+    data.read_seq = fields[9];
+    data.quality_scores = fields[10];
+    for (size_t i = 11; i < fields.size(); ++i)
     {
-        const auto &field=tokens[i];
+        const auto &field=fields[i];
         if (field.size() < 5 || field[2] != ':' || field[4] != ':') //aviod illegal field format
         {
             continue;
@@ -68,16 +68,22 @@ int splitOneLine(const std::string &line, AlignLine_Data_t &data)
     return 0;
 }
 
-/*
-* @brief valid the line is legal, and split line into struct
-*/
-bool validAndParse(const std::string &Line,AlignLine_Data_t &data)
+/**
+ * @brief 
+ * 
+ * @param[in] Line 
+ * @param[out] vector_splited_record 
+ * @param[out] data 
+ * @return true legal record
+ * @return false bad record
+ */
+bool validAndParse(const std::string &Line,std::vector<std::string> vector_splited_record,AlignLine_Data_t &data)
 {
     if(Line.empty())
         return false;
     if(Line[0]=='@')
         return false;
-    splitOneLine(Line, data);
+    splitOneLine(Line,vector_splited_record, data);
     if(data.quality_scores.size()<2)
         return false;
     return true;

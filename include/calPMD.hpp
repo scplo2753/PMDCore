@@ -21,7 +21,7 @@ struct L_MD_t
 class calPMD
 {
 public:
-    calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, statics_dicts_t& statics_dict);
+    calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq, statics_dicts_t &statics_dict);
     ~calPMD() = default;
 
     bool threshold_filter();
@@ -31,6 +31,7 @@ private:
     std::string real_ref_seq;
     std::string quals;
     std::string temp_quals;
+    std::string maskedseq;
     const std::vector<double> &ancient_model_deam;
     const std::vector<double> &modern_model_deam;
     int start_pos;
@@ -50,5 +51,5 @@ private:
     void calPMD_loop();
     void platypus(const int &start_distance, const int &backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos,int addition);
     int computeDegradationScore(int start_distance, int backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev);
-
+    void function_maskterminaldeam_init_maskedseq(int start_distance, int backstart_distance, bool is_reverse_context);
 };

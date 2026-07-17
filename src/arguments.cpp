@@ -196,3 +196,55 @@ bool function_basicTerminal(std::string_view real_read, std::string_view real_re
 
     return false;
 }
+
+void function_in_thread_pool_maskterminaldeam_or_maskterminalbases(const std::string &maskedseq, std::string &real_read, bool is_reverse, const std::vector<std::string> &splited_line, std::string &origin_line)
+{
+    std::string readp = maskedseq;
+    if (is_reverse)
+    {
+        readp = revcomp(readp);
+    }
+
+    real_read = maskedseq;
+
+    if (splited_line.empty())
+    {
+        return;
+    }
+
+    std::string rebuilt;
+    rebuilt.reserve(maskedseq.size() + splited_line.size() * 8 + 32);
+
+    const size_t first_count = std::min<size_t>(9, splited_line.size());
+    for (size_t i = 0; i < first_count; ++i)
+    {
+        if (i > 0)
+        {
+            rebuilt.push_back('\t');
+        }
+        rebuilt += splited_line[i];
+    }
+
+    if (!first_count && splited_line.size() > 0)
+    {
+        rebuilt += splited_line[0];
+    }
+
+    rebuilt.push_back('\t');
+    rebuilt += readp;
+
+    if (splited_line.size() > 10)
+    {
+        rebuilt.push_back('\t');
+        for (size_t i = 10; i < splited_line.size(); ++i)
+        {
+            if (i > 10)
+            {
+                rebuilt.push_back('\t');
+            }
+            rebuilt += splited_line[i];
+        }
+    }
+
+    origin_line = std::move(rebuilt);
+}

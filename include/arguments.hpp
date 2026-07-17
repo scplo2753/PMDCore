@@ -45,3 +45,5 @@ void function_basecomposition(parsedData &data, alignnmentData_t &real_alignment
 bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, uint read_len, std::string_view qual_seq);
 
 bool function_basicTerminal(std::string_view real_read, std::string_view real_ref_seq, std::string_view qual_seq);
+
+void function_in_thread_pool_maskterminaldeam_or_maskterminalbases(const std::string &maskedseq, std::string &real_read, bool is_reverse, const std::vector<std::string> &splited_line, std::string &origin_line);

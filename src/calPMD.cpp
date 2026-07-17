@@ -3,17 +3,18 @@
 #include <algorithm>
 
 // if DSfield || FLAGS_writesamfield || FLAGS_basic > 0 || FLAGS_terminal
-calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, statics_dicts_t &statics_dict) : real_read(std::move(real_data.real_read)),
-                                                                                                                                                                                                                                                   real_ref_seq(std::move(real_data.real_ref_seq)),
-                                                                                                                                                                                                                                                   quals(quals),
-                                                                                                                                                                                                                                                   temp_quals(quals),
-                                                                                                                                                                                                                                                   ancient_model_deam(ancient_model_deam),
-                                                                                                                                                                                                                                                   modern_model_deam(modern_model_deam),
-                                                                                                                                                                                                                                                   mismatch_dict(statics_dict.mismatch_dict),
-                                                                                                                                                                                                                                                   mismatch_dict_CpG(statics_dict.mismatch_dict_CpG),
-                                                                                                                                                                                                                                                   mismatch_dict_rev(statics_dict.mismatch_dict_rev),
-                                                                                                                                                                                                                                                   mismatch_dict_CpG_rev(statics_dict.mismatch_dict_CpG_rev),
-                                                                                                                                                                                                                                                   statics_dict(statics_dict)
+calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq_input, statics_dicts_t &statics_dict) : real_read(std::move(real_data.real_read)),
+                                                                                                                                                                                                                      real_ref_seq(std::move(real_data.real_ref_seq)),
+                                                                                                                                                                                                                      quals(quals),
+                                                                                                                                                                                                                      temp_quals(quals),
+                                                                                                                                                                                                                      ancient_model_deam(ancient_model_deam),
+                                                                                                                                                                                                                      modern_model_deam(modern_model_deam),
+                                                                                                                                                                                                                      mismatch_dict(statics_dict.mismatch_dict),
+                                                                                                                                                                                                                      mismatch_dict_CpG(statics_dict.mismatch_dict_CpG),
+                                                                                                                                                                                                                      mismatch_dict_rev(statics_dict.mismatch_dict_rev),
+                                                                                                                                                                                                                      mismatch_dict_CpG_rev(statics_dict.mismatch_dict_CpG_rev),
+                                                                                                                                                                                                                      maskedseq(maskedseq_input),
+                                                                                                                                                                                                                      statics_dict(statics_dict)
 {
     real_read_length = std::min({real_read.length(), real_ref_seq.length(), quals.length()});
     start_pos = 0;
@@ -60,7 +61,7 @@ void calPMD::calPMD_loop()
 
         if (quals[site] - 33 < FLAGS_requirebaseq)
         {
-            // if FLAGS_adjustbaseq
+            ///@todo implement if FLAGS_adjustbaseq
             continue;
         }
 
@@ -68,8 +69,9 @@ void calPMD::calPMD_loop()
         {
             platypus(start_distance, backStart_distance, real_ref_seq[site], real_read[site], addition);
         }
+        ///@todo implement options.deamination
 
-        int result=computeDegradationScore(start_distance, backStart_distance, real_ref_seq[site], real_read[site], qualsRev);
+        int result = computeDegradationScore(start_distance, backStart_distance, real_ref_seq[site], real_read[site], qualsRev);
         if (result == -1)
             continue;
         else if (result == -2)
@@ -186,8 +188,9 @@ int calPMD::computeDegradationScore(int start_distance,int backStart_distance,co
             if (real_ref_seq.at(start_distance + 1) != 'G')
                 return -1;
         }
-        //else if EcoliCpG
-        //else if Ecoli
+        ///@todo implement else if UDGhalf
+        ///@todo implement else if EcoliCpG
+        ///@todo implement else if Ecoli
         
         if(real_read_pos=='T')
         {
@@ -199,8 +202,8 @@ int calPMD::computeDegradationScore(int start_distance,int backStart_distance,co
                 L_MD.L_D = L_MD.L_D * L_mismatch_ss(start_distance, backStart_distance, ancient_model_deam, quals, FLAGS_polymorphism_ancient);
                 L_MD.L_M = L_MD.L_M * L_mismatch_ss(start_distance, backStart_distance, modern_model_deam, quals, FLAGS_polymorphism_contamination);
             }
-            //if options.adjustbaseq
-            return 1;
+            ///@todo if options.adjustbaseq
+            function_maskterminaldeam_init_maskedseq(start_distance, backStart_distance, false);
         }
         else if (real_read_pos=='C')
         {
@@ -229,6 +232,7 @@ int calPMD::computeDegradationScore(int start_distance,int backStart_distance,co
         {
             L_MD.L_D = L_MD.L_D * L_mismatch(backStart_distance, ancient_model_deam, qualsRev, FLAGS_polymorphism_ancient);
             L_MD.L_M = L_MD.L_M * L_mismatch(backStart_distance, modern_model_deam, qualsRev, FLAGS_polymorphism_contamination);
+            function_maskterminaldeam_init_maskedseq(start_distance, backStart_distance, true);
         }
         //if options.maskterminaldeaminations != False and options.ss ==False:
         //else
@@ -252,4 +256,21 @@ bool calPMD::threshold_filter()
         return true;
     }
     return false;
+}
+
+void calPMD::function_maskterminaldeam_init_maskedseq(int start_distance, int backstart_distance, bool is_reverse_context)
+{
+    if (!IS_USED_maskterminaldeaminations)
+    {
+        return;
+    }
+
+    if (start_distance <= FLAGS_maskterminaldeaminations)
+    {
+        maskedseq = real_read.substr(0, start_distance) + "N" + real_read.substr(start_distance + 1);
+    }
+    else if (backstart_distance <= FLAGS_maskterminaldeaminations && (FLAGS_ss || is_reverse_context))
+    {
+        maskedseq = real_read.substr(0, start_distance) + "N" + real_read.substr(start_distance + 1);
+    }
 }

@@ -1,6 +1,12 @@
 #pragma once
 #include <cmath>
 
+/**
+ * @brief error probabilities P to Phred quality score Q 
+ * \f$-10*\log_{10}
+ * @param[in] P error probabilities 
+ * @return double output phred qulity score
+ */
 static double prob2phred(double P)
 {
     return -10.0 * std::log10(P);

@@ -109,32 +109,78 @@ static void fa_get(std::string ref_seq, std::string chromosome, int start, int e
 {
 }
 
+/**
+ * @brief split record line and save fields to the vector<string>
+ * 
+ * @param[in] str record line
+ * @return std::vector<std::string> vector of fields
+ */
 static std::vector<std::string> split(const std::string &str)
 {
-    std::vector<std::string> tokens;
-    std::string token;
+    std::vector<std::string> fields;
+    std::string field;
     char del = '\x09'; //aka Tab button or \t
     for (char ch : str)
     {
         if (ch == del)
         {
-            tokens.push_back(token);
-            token.clear();
+            fields.push_back(field);
+            field.clear();
         }
         else
         {
-            token += ch;
+            field += ch;
         }
     }
-    tokens.push_back(token);
-    return tokens;
+    fields.push_back(field);
+    return fields;
 }
 
+/**
+ * @brief To check is the string only include + - . and number
+ *
+ * @param[in] str string that need to check
+ * @return true if is legal number;
+ * @return false
+ */
 static bool isStringDigit(const std::string &str)
 {
-    return std::all_of(str.begin(), str.end(), ::isdigit);
+    bool already_have_point = false;
+    bool already_have_plusNeg = false;
+    for (int i = 0; i < str.size(); ++i)
+    {
+        if (str[i] == '+' || str[i] == '-')
+            if (i == 0)
+                already_have_plusNeg = true;
+            else
+            {
+                return false;
+            }
+        else if (str[i] == '.')
+            if (already_have_point == false)
+            {
+                already_have_point = true;
+            }
+            else
+            {
+                return false;
+            }
+        else
+        {
+            if(!isdigit(str[i]))
+                return false;
+        }
+    }
+    return true;
 }
 
+/**
+ * @brief To check is the string only include alphabet
+ * 
+ * @param[in] str string that need to check
+ * @return true if only have alphabet
+ * @return false if have digit
+ */
 static bool isStringAlphabet(const std::string &str)
 {
     return std::all_of(str.begin(),str.end(),::isalpha);
@@ -151,7 +197,7 @@ static std::string strip(const std::string &str, const char &delimiter)
     return str.substr(start, end - start + 1);
 }
 
-static std::string lstip(const std::string &str, const char &delimiter)
+static std::string lstrip(const std::string &str, const char &delimiter)
 {
     size_t start = str.find_first_not_of(delimiter);
     if (start == std::string::npos)
@@ -161,7 +207,7 @@ static std::string lstip(const std::string &str, const char &delimiter)
     return str.substr(start);
 }
 
-static std::string rstip(const std::string &str, const char &delimiter)
+static std::string rstrip(const std::string &str, const char &delimiter)
 {
     size_t end = str.find_last_not_of(delimiter);
     if (end == std::string::npos)

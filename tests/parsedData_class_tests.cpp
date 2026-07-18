@@ -133,3 +133,14 @@ TEST(ParsedDataClassTest,test_of_getOpListInCIGAR)
     EXPECT_EQ(standardRecord.getMatchList(), expected_match);
     EXPECT_EQ(standardRecord.getDeletionList(), expected_deletion);
 }
+
+TEST(ParsedDataClassTest,set_ReadSeq_reverseSeq)
+{
+    std::vector<string> splited_record;
+    AlignLine_Data_t alignLine_data;
+    string raw_record = "M_E200023363L1C022R03201788808	0	1	1363297	37	4M1D26M	*	0	0	ACGACCCGGGCTCCCCCGCCCGCAGCGCCG	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	XT:A:U	NM:i:3	X0:i:1	X1:i:0	XM:i:2	XO:i:1	XG:i:1	MD:Z:4^C5C16C3	RG:Z:GXBS2-01";
+    validAndParse(raw_record,splited_record,alignLine_data);
+    parsedData parsed_data(alignLine_data);
+    parsed_data.set_ReadSeq_reverseSeq();
+    EXPECT_EQ(parsed_data.getReadSeq(), "CGGCGCTGCGGGCGGGGGAGCCCGGGTCGT");
+}

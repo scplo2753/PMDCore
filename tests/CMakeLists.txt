@@ -8,6 +8,8 @@ add_executable(PMDCore_tests
     LineParser_test.cpp
     #Reconstruct_test.cpp
     parsedData_class_tests.cpp
+    utilities_math_test.cpp
+    utilies_test.cpp
 )
 
 target_include_directories(PMDCore_tests

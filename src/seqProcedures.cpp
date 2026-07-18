@@ -69,7 +69,7 @@ int splitOneLine(const std::string &line, std::vector<std::string> vector_splite
 }
 
 /**
- * @brief 
+ * @brief Check the record is legal or not, if legal, output the splited to data(for calculate PMD score), and splited_record
  * 
  * @param[in] Line 
  * @param[out] vector_splited_record 

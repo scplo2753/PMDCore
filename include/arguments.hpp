@@ -14,7 +14,8 @@
 
 // X-Macro
 #define DEFINE_bool(name, default_val, help_text) \
-    extern bool FLAGS_##name;
+    extern bool FLAGS_##name; \
+    extern bool IS_USED_##name;
 
 #define DEFINE_int32(name, default_val, help_text) \
     extern int FLAGS_##name;        \

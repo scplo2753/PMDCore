@@ -3,7 +3,8 @@
 #include <ranges>
 
 #define DEFINE_bool(name, default_val, help_text) \
-    bool FLAGS_##name = default_val;
+    bool FLAGS_##name = default_val; \
+    bool IS_USED_##name = false;
 
 #define DEFINE_int32(name, default_val, help_text) \
     int FLAGS_##name = default_val; \
@@ -36,16 +37,13 @@ void initCMDParse(int argc, char *argv[])
         parser.add_argument("--no" #name).default_value(default_val).implicit_value(true);
 
     #define DEFINE_int32(name, default_val, help_text) \
-        parser.add_argument("--" #name).default_value(default_val).help(help_text).scan<'i', int>(); \
-        IS_USED_##name=parser.is_used("FLAGS_" #name);
+        parser.add_argument("--" #name).default_value(default_val).help(help_text).scan<'i', int>();
 
     #define DEFINE_string(name, default_val, help_text) \
-        parser.add_argument("--" #name).default_value(default_val).help(help_text); \
-        IS_USED_##name=parser.is_used("FLAGS_" #name);
+        parser.add_argument("--" #name).default_value(default_val).help(help_text);
 
     #define DEFINE_double(name, default_val, help_text) \
-        parser.add_argument("--" #name).default_value(default_val).help(help_text).scan<'g', double>(); \
-        IS_USED_##name=parser.is_used("FLAGS_" #name);
+        parser.add_argument("--" #name).default_value(default_val).help(help_text).scan<'g', double>();
 
     #define DEFINE_uint32(name, default_val, help_text) DEFINE_int32(name, default_val, help_text)
 
@@ -61,6 +59,7 @@ void initCMDParse(int argc, char *argv[])
 
     #define DEFINE_bool(name, default_val, help_text) \
         FLAGS_##name = default_val;                   \
+        IS_USED_##name = parser.is_used("--" #name) || parser.is_used("--no" #name); \
         if (parser.get<bool>("--" #name))             \
         {                                             \
             FLAGS_##name = true;                      \
@@ -71,15 +70,18 @@ void initCMDParse(int argc, char *argv[])
         }
 
     #define DEFINE_int32(name, default_val, help_text) \
-        FLAGS_##name = parser.get<int>("--" #name);
+        FLAGS_##name = parser.get<int>("--" #name); \
+        IS_USED_##name = parser.is_used("--" #name);
 
     #define DEFINE_uint32(name, default_val, help_text) DEFINE_int32(name, default_val, help_text)
 
     #define DEFINE_double(name, default_val, help_text) \
-        FLAGS_##name = parser.get<double>("--" #name);
+        FLAGS_##name = parser.get<double>("--" #name); \
+        IS_USED_##name = parser.is_used("--" #name);
 
     #define DEFINE_string(name, default_val, help_text) \
-        FLAGS_##name = parser.get<std::string>("--" #name);
+        FLAGS_##name = parser.get<std::string>("--" #name); \
+        IS_USED_##name = parser.is_used("--" #name);
 
     #include "args.list"
 

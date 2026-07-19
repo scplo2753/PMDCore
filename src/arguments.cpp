@@ -34,7 +34,6 @@ void initCMDParse(int argc, char *argv[])
 
     #define DEFINE_bool(name, default_val, help_text)           \
         parser.add_argument("--" #name).help(help_text).flag(); \
-        parser.add_argument("--no" #name).default_value(default_val).implicit_value(true);
 
     #define DEFINE_int32(name, default_val, help_text) \
         parser.add_argument("--" #name).default_value(default_val).help(help_text).scan<'i', int>();
@@ -57,21 +56,17 @@ void initCMDParse(int argc, char *argv[])
 
         parser.parse_args(argc, argv);
 
-    #define DEFINE_bool(name, default_val, help_text) \
-        FLAGS_##name = default_val;                   \
-        IS_USED_##name = parser.is_used("--" #name) || parser.is_used("--no" #name); \
-        if (parser.get<bool>("--" #name))             \
-        {                                             \
-            FLAGS_##name = true;                      \
-        }                                             \
-        if (parser.get<bool>("--no" #name))           \
-        {                                             \
-            FLAGS_##name = false;                     \
-        }
+    #define DEFINE_bool(name, default_val, help_text)    \
+            FLAGS_##name = default_val;                  \
+            IS_USED_##name = parser.is_used("--" #name); \
+            if (parser.get<bool>("--" #name))            \
+            {                                            \
+                FLAGS_##name = true;                     \
+            }                                            \
 
     #define DEFINE_int32(name, default_val, help_text) \
-        FLAGS_##name = parser.get<int>("--" #name); \
-        IS_USED_##name = parser.is_used("--" #name);
+            FLAGS_##name = parser.get<int>("--" #name); \
+            IS_USED_##name = parser.is_used("--" #name);
 
     #define DEFINE_uint32(name, default_val, help_text) DEFINE_int32(name, default_val, help_text)
 
@@ -89,9 +84,15 @@ void initCMDParse(int argc, char *argv[])
     #undef DEFINE_int32
     #undef DEFINE_uint32
     #undef DEFINE_double
-#undef DEFINE_string
+    #undef DEFINE_string
 }
 
+/**
+ * @brief this function is used to calculate the base composition of the read and reference sequence, and store the result in the parsedData object
+ * @todo Implement the actual logic for base composition calculation
+ * @param[in] data parsedData object to store the result
+ * @param[in] real_alignmentData alignment data containing the reference sequence and read
+ */
 void function_basecomposition(parsedData &data, alignnmentData_t &real_alignmentData)
 {
     uint backoffset = 10;
@@ -199,6 +200,15 @@ bool function_basicTerminal(std::string_view real_read, std::string_view real_re
     return false;
 }
 
+/**
+ * @brief This function processes a masked sequence and updates the real read and origin line based on the provided parameters. It handles both forward and reverse sequences, reconstructing the origin line with appropriate tab-separated values.
+ * 
+ * @param[in] maskedseq The masked sequence to be processed.
+ * @param[out] real_read The real read sequence to be updated.
+ * @param[in] is_reverse A boolean indicating if the sequence is in reverse orientation.
+ * @param[in] splited_line A vector of strings representing the split line components.
+ * @param[out] origin_line The reconstructed origin line to be updated.
+ */
 void function_in_thread_pool_maskterminaldeam_or_maskterminalbases(const std::string &maskedseq, std::string &real_read, bool is_reverse, const std::vector<std::string> &splited_line, std::string &origin_line)
 {
     std::string readp = maskedseq;

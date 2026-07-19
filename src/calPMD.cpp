@@ -2,6 +2,17 @@
 #include "arguments.hpp"
 #include <algorithm>
 
+/**
+ * @brief Constructs a calPMD object and initializes its members based on the provided parameters. It calculates the PMD score by iterating through the real read and reference sequence, applying the ancient and modern deamination models, and updating mismatch dictionaries accordingly.
+ * @details The constructor takes in a real_data_t object containing the real read and reference sequence, vectors for modern and ancient deamination models, quality scores, a masked sequence, and a statics_dicts_t object for managing mismatch dictionaries. It initializes the member variables and calls the calPMD_loop() function to perform the PMD calculation.
+ * @param[in] real_data A real_data_t object containing the real read and reference sequence
+ * @param[in] modern_model_deam A vector of doubles representing the modern deamination model
+ * @param[in] ancient_model_deam A vector of doubles representing the ancient deamination model
+ * @param[in] quals A string_view representing the quality scores of the read
+ * @param[in] maskedseq_input A string representing the masked sequence
+ * @param[in] statics_dict A statics_dicts_t object for managing mismatch dictionaries
+ * @note The constructor assumes that the input sequences and quality scores are valid and properly formatted.
+ */
 // if DSfield || FLAGS_writesamfield || FLAGS_basic > 0 || FLAGS_terminal
 calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq_input, statics_dicts_t &statics_dict) : real_read(std::move(real_data.real_read)),
                                                                                                                                                                                                                       real_ref_seq(std::move(real_data.real_ref_seq)),
@@ -41,6 +52,12 @@ calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_
     calPMD_loop();
 }
 
+/**
+ * @brief This function iterates through the real read and reference sequence, calculating the PMD score based on the provided ancient and modern deamination models. It updates mismatch dictionaries accordingly and computes the degradation score for each position in the read.
+ * @details The function loops through each position in the real read, checking for valid bases and
+ * applying the ancient and modern deamination models to compute the degradation score. It also updates mismatch dictionaries based on the observed mismatches and their positions. The function handles both forward and reverse sequences, taking into account the specified flags for CpG context and other options.
+ * @note The function assumes that the input sequences and quality scores are valid and properly formatted.
+ */
 void calPMD::calPMD_loop()
 {
     int addition = 0;
@@ -81,6 +98,15 @@ void calPMD::calPMD_loop()
     }
 }
 
+/**
+ * @brief This function processes a site in the read and updates the mismatch dictionaries based on the provided parameters.
+ * @param[in] start_distance The distance from the start of the read
+ * @param[in] backStart_distance The distance from the end of the read
+ * @param[in] real_ref_seq_pos The reference sequence base at the current position
+ * @param[in] real_read_pos The read base at the current position
+ * @param[in] addition The number of times this mismatch has been observed
+ * @returns None
+ */
 void calPMD::platypus(const int &start_distance, const int &backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos,int addition)
 {
     bool CpGcheck = false;
@@ -140,7 +166,7 @@ void calPMD::platypus(const int &start_distance, const int &backStart_distance, 
     the_key.push_back(real_read_pos);
     the_key += std::to_string(backStart_distance);
 
-    // 仅在修改字典时加锁
+    // set lock only when modifying the dictionary
     {
         std::lock_guard<std::mutex> lock(statics_dict.dict_mutex);
         if (CpGcheck == true)
@@ -172,9 +198,11 @@ void calPMD::platypus(const int &start_distance, const int &backStart_distance, 
     }
 }
 
-//@brief: if return -1: skip current loop
-//        if return -2: break the loop
-//        if return 0: like normal
+/**
+* @returns -1 skip current loop
+*        -2 break the loop
+*        0 like normal
+*/
 int calPMD::computeDegradationScore(int start_distance,int backStart_distance,const char &real_ref_seq_pos,const char &real_read_pos, std::string &qualsRev)
 {
     if (start_distance >= real_read_length)
@@ -249,6 +277,10 @@ int calPMD::computeDegradationScore(int start_distance,int backStart_distance,co
     return 0;
 }
 
+/**
+ * @brief This function checks if the calculated likelihood ratio (LR) falls within the specified threshold range. It returns true if the LR is greater than or equal to the lower threshold and less than the upper threshold, indicating that the PMD score meets the filtering criteria.
+ * @returns true if the LR is within the threshold range, false otherwise
+ */
 bool calPMD::threshold_filter()
 {
     if (LR >= FLAGS_threshold && LR < FLAGS_threshold)
@@ -258,6 +290,13 @@ bool calPMD::threshold_filter()
     return false;
 }
 
+/**
+ * @brief This function initializes the masked sequence based on the provided start and back start distances, as well as the reverse context flag. It modifies the masked sequence by replacing bases with 'N' at specified positions if certain conditions are met, such as being within the threshold for masking terminal deaminations.
+ * @param[in] start_distance The distance from the start of the read
+ * @param[in] backstart_distance The distance from the end of the read
+ * @param[in] is_reverse_context A boolean indicating if the sequence is in reverse orientation
+ * @note The function checks the FLAGS_maskterminaldeaminations and FLAGS_ss flags to determine
+ */
 void calPMD::function_maskterminaldeam_init_maskedseq(int start_distance, int backstart_distance, bool is_reverse_context)
 {
     if (!IS_USED_maskterminaldeaminations)

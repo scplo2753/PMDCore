@@ -18,6 +18,11 @@ struct L_MD_t
     float L_M_min = 1.0;
 };
 
+/**
+ * @class calPMD
+ * @brief This class is responsible for calculating the PMD (Post Mortem Damage) score based on the provided real read, reference sequence, quality scores, and other parameters. It utilizes the ancient and modern deamination models to compute the degradation score and update mismatch dictionaries accordingly.
+ * 
+ */
 class calPMD
 {
 public:

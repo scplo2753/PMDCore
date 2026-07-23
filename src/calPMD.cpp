@@ -13,7 +13,6 @@
  * @param[in] statics_dict A statics_dicts_t object for managing mismatch dictionaries
  * @note The constructor assumes that the input sequences and quality scores are valid and properly formatted.
  */
-// if DSfield || FLAGS_writesamfield || FLAGS_basic > 0 || FLAGS_terminal
 calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq_input, statics_dicts_t &statics_dict) : real_read(std::move(real_data.real_read)),
                                                                                                                                                                                                                       real_ref_seq(std::move(real_data.real_ref_seq)),
                                                                                                                                                                                                                       quals(quals),
@@ -283,7 +282,7 @@ int calPMD::computeDegradationScore(int start_distance,int backStart_distance,co
  */
 bool calPMD::threshold_filter()
 {
-    if (LR >= FLAGS_threshold && LR < FLAGS_threshold)
+    if (LR >= FLAGS_threshold && LR < FLAGS_upperthreshold)
     {
         return true;
     }

@@ -9,6 +9,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
+
+# Only enable tests for Debug builds.
+include(CTest)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(BUILD_TESTING ON CACHE BOOL "Enable tests" FORCE)
+else()
+    set(BUILD_TESTING OFF CACHE BOOL "Enable tests" FORCE)
+endif()
 #set(CMAKE_UNITY_BUILD ON)
 
 find_package(Threads REQUIRED)
@@ -27,7 +35,6 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(wrappers)
 
-
 target_link_libraries(PMDCore PRIVATE SRC 
 matplot argparse Threads::Threads wrappers)
 
@@ -35,7 +42,6 @@ if(PMDCORE_STATIC_DEPS AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set_target_properties(PMDCore PRIVATE -static-libgcc -static-libstdc++)
 endif()
 
-include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()

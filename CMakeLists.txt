@@ -25,10 +25,11 @@ add_subdirectory(third_party/matplotplusplus)
 add_subdirectory(third_party/argparse)
 add_subdirectory(include)
 add_subdirectory(src)
+add_subdirectory(wrappers)
 
 
 target_link_libraries(PMDCore PRIVATE SRC 
-matplot argparse Threads::Threads)
+matplot argparse Threads::Threads wrappers)
 
 if(PMDCORE_STATIC_DEPS AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set_target_properties(PMDCore PRIVATE -static-libgcc -static-libstdc++)

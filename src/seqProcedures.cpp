@@ -82,7 +82,13 @@ bool validAndParse(const std::string &Line,std::vector<std::string> vector_split
     if(Line.empty())
         return false;
     if(Line[0]=='@')
+    {
+        if (FLAGS_header)
+        {
+            std::cout << rstrip(Line,'\n') << std::endl;
+        }
         return false;
+    }
     splitOneLine(Line,vector_splited_record, data);
     if(data.quality_scores.size()<2)
         return false;
@@ -170,16 +176,6 @@ int ReconstructAlignmentAndRefSeq(parsedData &data, alignnmentData_t &alignnment
         alignnmentData.ref_seq = revcomp(alignnmentData.ref_seq);
     }
     return 0;
-}
-
-//options: get masked seq
-std::string isMaskOptionExists(std::string& real_read)
-{
-    if (FLAGS_maskterminalbases || FLAGS_maskterminaldeaminations)
-    {
-        return real_read;
-    }
-    return std::string();
 }
 
 //step2

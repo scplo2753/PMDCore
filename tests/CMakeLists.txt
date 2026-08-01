@@ -7,9 +7,13 @@ set(PMDCORE_TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data")
 add_executable(PMDCore_tests
     LineParser_test.cpp
     #Reconstruct_test.cpp
+    #calPMD_test.cpp
     parsedData_class_tests.cpp
     utilities_math_test.cpp
+    formula_tests/matchs_test.cpp
     utilies_test.cpp
+    formula_tests/generate_deam_models_test.cpp
+    formula_tests/modern_model_deam_test.cpp
 )
 
 target_include_directories(PMDCore_tests
@@ -24,6 +28,7 @@ target_link_libraries(PMDCore_tests
         headers
         GTest::gtest_main
         Threads::Threads
+        wrappers
 )
 
 target_compile_definitions(PMDCore_tests

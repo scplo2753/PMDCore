@@ -48,3 +48,13 @@ bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_r
 bool function_basicTerminal(std::string_view real_read, std::string_view real_ref_seq, std::string_view qual_seq);
 
 void function_in_thread_pool_maskterminaldeam_or_maskterminalbases(const std::string &maskedseq, std::string &real_read, bool is_reverse, const std::vector<std::string> &splited_line, std::string &origin_line);
+
+namespace ParamChecks{
+    inline bool isUsing_maskTerminalBases(){
+        return IS_USED_maskterminalbases;
+    }
+
+    inline bool isUsing_maskTerminalDeaminations(){
+        return IS_USED_maskterminaldeaminations;
+    }
+}

@@ -217,6 +217,20 @@ static std::string rstrip(const std::string &str, const char &delimiter)
     return str.substr(0, end + 1);
 }
 
+/**
+ * @brief Computes the probability of a matching observation
+ * @details implements Eq. (1)
+ * P. Skoglund, B.H. Northoff, M.V. Shunkov, A.P. Derevianko, S. Pääbo, J. Krause, & M. Jakobsson,
+ *  Separating endogenous ancient DNA from modern day contamination in a Siberian Neandertal,
+ * Proc. Natl. Acad. Sci. U.S.A. 111 (6) 2229-2234,
+ * https://doi.org/10.1073/pnas.1318934111 (2014).
+ *
+ * @param fpos
+ * @param fmodel
+ * @param fqual
+ * @param polymorphism
+ * @return double
+ */
 static double L_match(int fpos, const std::vector<double> &fmodel, std::string &fqual, const double &polymorphism)
 {
     double P_damage = fmodel[fpos];

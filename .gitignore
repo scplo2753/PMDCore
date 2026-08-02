@@ -83,3 +83,4 @@ CMakeLists.txt.user*
 .vs/
 .vscode/
 .clangd
+pmdtools.0.60.py

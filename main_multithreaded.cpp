@@ -17,7 +17,7 @@
 #include "utilities_wrappers.hpp"
 #include "statics.hpp"
 
-#define __DEBUG__ ///Enable debug module for compare result with origin program output
+//#define __DEBUG__ ///Enable debug module for compare result with origin program output
 //#define __VERBOSE__
 
 static void merge_match_dicts(match_dict_t &dst, const match_dict_t &src)
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 
         line_count += 1;
 
-        // 数据预处理
+        // data pre-process
         if (!ArgsFilter(raw_data))
             continue;
 

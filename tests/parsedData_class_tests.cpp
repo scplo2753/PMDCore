@@ -7,9 +7,9 @@
 using std::string;
 using std::string_view;
 
-AlignLine_Data_t standardLine{"read1", "0", "chr1", 100, 60, 
+recordLine_struct_t standardLine{"read1", "0", "chr1", 100, 60, 
     "3M1D4X3M", "ACGTACGTAC", "IIIIIIIIII", {{"MD", {'Z', "10"}}}};
-AlignLine_Data_t dataForFlagTest{"read2", "4095", "chr2", 200, 30, 
+recordLine_struct_t dataForFlagTest{"read2", "4095", "chr2", 200, 30, 
     "5M5S", "ACGTACGTAC", "IIIIIIIIII", {{"MD", {'Z', "5"}}}};
 
 parsedData standardRecord(standardLine);
@@ -82,7 +82,7 @@ TEST(ParsedDataClassTest,test_of_getMDList)
 
 TEST(ParsedDataClassTest,test_of_getMDList_with_multiplePos)
 {
-    parsedData multiple_pos_in_MD_Field(AlignLine_Data_t{"MultiMD","0","chr2", 200, 30, 
+    parsedData multiple_pos_in_MD_Field(recordLine_struct_t{"MultiMD","0","chr2", 200, 30, 
     "5M5S", "ACGTACGTAC", "IIIIIIIIII", {{"MD", {'Z', "15^A12BC"}}}});
     const std::vector<string> expected{"15", "^A", "12", "B", "C"};
     EXPECT_EQ(multiple_pos_in_MD_Field.getMDList().size(), 5);
@@ -137,7 +137,7 @@ TEST(ParsedDataClassTest,test_of_getOpListInCIGAR)
 TEST(ParsedDataClassTest,set_ReadSeq_reverseSeq)
 {
     std::vector<string> splited_record;
-    AlignLine_Data_t alignLine_data;
+    recordLine_struct_t alignLine_data;
     string raw_record = "M_E200023363L1C022R03201788808	0	1	1363297	37	4M1D26M	*	0	0	ACGACCCGGGCTCCCCCGCCCGCAGCGCCG	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	XT:A:U	NM:i:3	X0:i:1	X1:i:0	XM:i:2	XO:i:1	XG:i:1	MD:Z:4^C5C16C3	RG:Z:GXBS2-01";
     validAndParse(raw_record,splited_record,alignLine_data);
     parsedData parsed_data(alignLine_data);

@@ -3,10 +3,10 @@
 
 /**
  * @brief This function checks if the length of the read sequence falls within the specified minimum and maximum length thresholds. It returns true if the read length is valid, and false otherwise.
- * @param[in] data The AlignLine_Data_t structure containing the read sequence and other alignment information.
+ * @param[in] data The recordLine_struct_t structure containing the read sequence and other alignment information.
  * @returns true if the read length is valid, false otherwise
  */
-inline bool lengthFilter(const AlignLine_Data_t &data)
+inline bool lengthFilter(const recordLine_struct_t &data)
 {
     if (FLAGS_readlength > 0 && data.read_seq.size() != FLAGS_readlength)
     {
@@ -23,93 +23,54 @@ inline bool lengthFilter(const AlignLine_Data_t &data)
     return true;
 }
 
-bool cigarFilter(const AlignLine_Data_t &data)
+bool cigarFilter(const recordLine_struct_t &data)
 {
-    if (FLAGS_noinsertion && data.cigar.find('I') != std::string::npos)
+    // Single pass over the CIGAR string to collect presence flags.
+    bool hasI = false, hasD = false, hasS = false;
+    bool hasH = false, hasN = false, hasP = false;
+    const std::string &c = data.cigar;
+    for (char ch : c)
     {
-        return false;
+        switch (ch)
+        {
+        case 'I': hasI = true; break;
+        case 'D': hasD = true; break;
+        case 'S': hasS = true; break;
+        case 'H': hasH = true; break;
+        case 'N': hasN = true; break;
+        case 'P': hasP = true; break;
+        default: break;
+        }
+        // early exit if all flags are set
+        if (hasI && hasD && hasS && hasH && hasN && hasP)
+            break;
     }
-    if (FLAGS_nodeletion && data.cigar.find('D') != std::string::npos)
-    {
-        return false;
-    }
-    if (FLAGS_onlyinsertions && data.cigar.find('I') == std::string::npos)
-    {
-        return false;
-    }
-    if (FLAGS_onlydeletions && data.cigar.find('D') == std::string::npos)
-    {
-        if (FLAGS_noinsertion && data.cigar.find('I') != std::string::npos)
-        {
-            return false;
-        }
-        if (FLAGS_nodeletion && data.cigar.find('D') != std::string::npos)
-        {
-            return false;
-        }
-        if (FLAGS_onlyinsertions && data.cigar.find('I') == std::string::npos)
-        {
-            return false;
-        }
-        if (FLAGS_onlydeletions && data.cigar.find('D') == std::string::npos)
-        {
-            return false;
-        }
-        if (FLAGS_noindels && (data.cigar.find('I') != std::string::npos || data.cigar.find('D') != std::string::npos))
-        {
-            return false;
-        }
-        if (FLAGS_noclips && (data.cigar.find('S') != std::string::npos ||
-                              data.cigar.find('H') != std::string::npos ||
-                              data.cigar.find('N') != std::string::npos ||
-                              data.cigar.find('P') != std::string::npos))
-        {
-            return false;
-        }
-        if (FLAGS_onlyclips && data.cigar.find('S') == std::string::npos)
-        {
-            return false;
-        }
-        if (data.cigar.find('H') != std::string::npos ||
-            data.cigar.find('N') != std::string::npos ||
-            data.cigar.find('P') != std::string::npos)
-        {
-            std::cout << "Not support M, I, S, D, this alignment will be skipped." << std::endl;
-            return false;
-        }
-        return false;
-    }
-    if (FLAGS_noindels && (data.cigar.find('I') != std::string::npos || data.cigar.find('D') != std::string::npos))
-    {
-        return false;
-    }
-    if (FLAGS_noclips && (data.cigar.find('S') != std::string::npos ||
-                          data.cigar.find('H') != std::string::npos ||
-                          data.cigar.find('N') != std::string::npos ||
-                          data.cigar.find('P') != std::string::npos))
-    {
-        return false;
-    }
-    if (FLAGS_onlyclips && data.cigar.find('S') == std::string::npos)
-    {
-        return false;
-    }
-    if (data.cigar.find('H') != std::string::npos ||
-        data.cigar.find('N') != std::string::npos ||
-        data.cigar.find('P') != std::string::npos)
+
+    bool hasHNP = hasH || hasN || hasP;
+
+    if (FLAGS_noinsertion && hasI) return false;
+    if (FLAGS_nodeletion && hasD) return false;
+    if (FLAGS_onlyinsertions && !hasI) return false;
+    if (FLAGS_onlydeletions && !hasD) return false;
+    if (FLAGS_noindels && (hasI || hasD)) return false;
+    if (FLAGS_noclips && (hasS || hasHNP)) return false;
+    if (FLAGS_onlyclips && !hasS) return false;
+
+    if (hasHNP)
     {
         std::cout << "Not support M, I, S, D, this alignment will be skipped." << std::endl;
         return false;
     }
+
     return true;
 }
 
 /**
  * @brief This function applies a series of filters to the alignment data based on the specified command-line flags. It checks the read length, chromosome name, CIGAR string, and mapping quality against the provided thresholds. If any of the filters fail, it returns false; otherwise, it returns true.
- * @param[in] data The AlignLine_Data_t structure containing the read sequence and other alignment information.
+ * @param[in] data The recordLine_struct_t structure containing the read sequence and other alignment information.
  * @returns true if the alignment data passes all filters, false otherwise
  */
-bool ArgsFilter(const AlignLine_Data_t &data)
+bool ArgsFilter(const recordLine_struct_t &data)
 {
     if (!lengthFilter(data))
     {

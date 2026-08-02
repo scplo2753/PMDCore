@@ -20,7 +20,7 @@ static bool isCigarOp(char c)
     }
 }
 
-parsedData::parsedData(const AlignLine_Data_t data) : data(data), flag_isReadReversed(false)
+parsedData::parsedData(const recordLine_struct_t data) : data(data), flag_isReadReversed(false)
 {
 }
 

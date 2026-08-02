@@ -12,7 +12,7 @@ inline thread_local statics_dicts_t *tls_statics_dict = nullptr;
 // 数据处理结构体
 struct WorkItem
 {
-    AlignLine_Data_t raw_data;
+    recordLine_struct_t raw_data;
     parsedData parsed_data;
     alignnmentData_t alignment_data;
 };

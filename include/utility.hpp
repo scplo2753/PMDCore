@@ -46,7 +46,7 @@ using options_map_t = std::unordered_map<std::string,options_value>;
 /*
 * @todo review sam/bam optional field, if value can be multiple
 */
-struct AlignLine_Data_t
+struct recordLine_struct_t
 {
     std::string QNAME;
     std::string FLAG;

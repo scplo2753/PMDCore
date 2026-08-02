@@ -4,17 +4,16 @@ find_package(GTest REQUIRED)
 
 set(PMDCORE_TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-add_executable(PMDCore_tests
+set(PMDCORE_TEST_SOURCES
     LineParser_test.cpp
-    #Reconstruct_test.cpp
-    #calPMD_test.cpp
+    Reconstruct_Alignment_test.cpp
+    calPMD_test.cpp
     parsedData_class_tests.cpp
-    utilities_math_test.cpp
-    formula_tests/matchs_test.cpp
-    utilies_test.cpp
-    formula_tests/generate_deam_models_test.cpp
-    formula_tests/modern_model_deam_test.cpp
+    utilities_tests/utilities_math_test.cpp
+    utilities_tests/utilities_test.cpp
 )
+
+add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES})
 
 target_include_directories(PMDCore_tests
     PRIVATE

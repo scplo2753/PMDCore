@@ -1,11 +1,8 @@
 #include "seqProcedures.hpp"
 #include "arguments.hpp"
 
-/******
- * @todo: this function is not used yet, but it is a good idea to implement it for future use. It can be used to validate the data before processing.
- * @brief check the data is legal or not, if illegal, return false, otherwise return
- */
-bool isLegalData(const AlignLine_Data_t &data)
+
+bool isLegalData(const recordLine_struct_t &data)
 {
     if (data.QNAME.empty() || data.FLAG.empty() || data.RNAME.empty() || data.cigar.empty() || data.read_seq.empty() || data.quality_scores.empty())
     {
@@ -15,12 +12,8 @@ bool isLegalData(const AlignLine_Data_t &data)
     return true;
 }
 
-/****
-* @brief parse the raw string to the struct of fields
-* @related AlignLine_data_t
-* @return return -1 if line is illegal, otherwise return 0
-*****/
-int splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, AlignLine_Data_t &data)
+
+int splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, recordLine_struct_t &data)
 {
     std::vector<std::string> fields(split(line));
     
@@ -68,16 +61,8 @@ int splitOneLine(const std::string &line, std::vector<std::string> vector_splite
     return 0;
 }
 
-/**
- * @brief Check the record is legal or not, if legal, output the splited to data(for calculate PMD score), and splited_record
- * 
- * @param[in] Line 
- * @param[out] vector_splited_record 
- * @param[out] data 
- * @return true legal record
- * @return false bad record
- */
-bool validAndParse(const std::string &Line,std::vector<std::string> vector_splited_record,AlignLine_Data_t &data)
+
+bool validAndParse(const std::string &Line,std::vector<std::string> vector_splited_record,recordLine_struct_t &data)
 {
     if(Line.empty())
         return false;
@@ -95,13 +80,6 @@ bool validAndParse(const std::string &Line,std::vector<std::string> vector_split
     return true;
 }
 
-/*******
- * @brief if MD list have nothing, then skip this line. alignment string shows where don't match the reference sequence
- * @param[in] &data: parsedData
- * @param[out] &alignmentData: the struct that need to output
- * @return -1 if the MD:Z is not exists, skip this line
- * @return 0 like normal
- *******/
 int ReconstructAlignmentAndRefSeq(parsedData &data, alignnmentData_t &alignnmentData)
 {
     std::vector<std::string> md_list = data.getMDList();

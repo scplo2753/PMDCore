@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
     while (std::getline(std::cin, line))
     {
-        AlignLine_Data_t raw_data;
+        recordLine_struct_t raw_data;
 
         if (!validAndParse(line, splited_record, raw_data))
             continue;

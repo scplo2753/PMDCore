@@ -26,9 +26,30 @@ struct L_MD_t
 class calPMD
 {
 public:
-    calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq, statics_dicts_t &statics_dict);
+    /**
+     * @brief Constructs a calPMD object and initializes its members based on the provided parameters. 
+     *        It calculates the PMD score by iterating through the real read and reference sequence, applying the ancient and modern deamination models, and updating mismatch dictionaries accordingly.
+     * @param[in] real_data A real_data_t object containing the real read and reference sequence
+     * @param[in] modern_model_deam A vector of doubles representing the modern deamination model
+     * @param[in] ancient_model_deam A vector of doubles representing the ancient deamination model
+     * @param[in] quals A string_view representing the quality scores of the read
+     * @param[in] maskedseq_input A string representing the masked sequence
+     * @param[in] statics_dict A statics_dicts_t object for managing mismatch dictionaries
+     * @note The constructor assumes that the input sequences and quality scores are valid and properly formatted.
+     */
+    calPMD(real_data_t &&real_data, 
+        const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, 
+        std::string_view quals, 
+        const std::string &maskedseq, 
+        statics_dicts_t &statics_dict);
+
     ~calPMD() = default;
 
+    /**
+     * @brief This function checks if the calculated likelihood ratio (LR) falls within the specified threshold range. 
+     *        It returns true if the LR is greater than or equal to the lower threshold and less than the upper threshold, indicating that the PMD score meets the filtering criteria.
+     * @returns true if the LR is within the threshold range, false otherwise
+     */
     bool threshold_filter();
 
 private:

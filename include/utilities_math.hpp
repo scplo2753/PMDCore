@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <vector>
 
 /**
  * @brief error probabilities P to Phred quality score Q 
@@ -47,6 +48,11 @@ static long double py_round(const double value,const int ndigits = 0)
     long double shifted = static_cast<long double>(value) * factor;
     long double rounded = std::nearbyint(shifted);
     return (rounded / factor);
+}
+
+static std::vector<double> get_modern_model_deam(const size_t length, const double probability)
+{
+    return std::vector<double>(length, probability);
 }
 
 /**

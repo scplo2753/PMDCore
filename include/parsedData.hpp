@@ -8,7 +8,7 @@ class parsedData
 {
 public:
     // construction/destruction functions
-    parsedData(const AlignLine_Data_t data);
+    parsedData(const recordLine_struct_t data);
     ~parsedData() = default;
 
     // get raw data functions
@@ -57,7 +57,7 @@ public:
     void set_ReadSeq_reverseSeq();
 
 private:
-    AlignLine_Data_t data;
+    recordLine_struct_t data;
     std::vector<std::pair<char, std::string>> cigar_list;
     bool flag_isReadReversed;
 

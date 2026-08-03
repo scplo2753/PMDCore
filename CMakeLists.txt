@@ -13,6 +13,7 @@ endif()
 # Only enable tests for Debug builds.
 include(CTest)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(__DEBUG__)
     set(BUILD_TESTING ON CACHE BOOL "Enable tests" FORCE)
 else()
     set(BUILD_TESTING OFF CACHE BOOL "Enable tests" FORCE)

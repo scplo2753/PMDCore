@@ -9,11 +9,13 @@ set(PMDCORE_TEST_SOURCES
     Reconstruct_Alignment_test.cpp
     calPMD_test.cpp
     parsedData_class_tests.cpp
+    statics_tests.cpp
     utilities_tests/utilities_math_test.cpp
     utilities_tests/utilities_test.cpp
 )
 
-add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES})
+add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES}
+    statics_tests.cpp)
 
 target_include_directories(PMDCore_tests
     PRIVATE

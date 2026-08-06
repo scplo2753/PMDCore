@@ -59,6 +59,8 @@ struct recordLine_struct_t
     options_map_t options_map;
 };
 
+
+
 /****** 
  * @brief struct of reconstructed reference and alignment data
  * @details first var is reference, the second one is read's alignment data
@@ -90,7 +92,8 @@ struct statics_dicts_t
     mutable std::mutex dict_mutex;
 };
 
-static std::string revcomp(const std::string &input)
+static std::string
+revcomp(const std::string &input)
 {
     auto temp = input;
     std::reverse(temp.begin(), temp.end());

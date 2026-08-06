@@ -8,6 +8,7 @@ inline std::mutex output_mutex;
 inline constexpr size_t OUTPUT_BUFFER_FLUSH_SIZE = 1 << 20;
 
 inline thread_local statics_dicts_t *tls_statics_dict = nullptr;
+inline thread_local statics_denominator_table_t *tls_denominator_table = nullptr;
 
 // 数据处理结构体
 struct WorkItem

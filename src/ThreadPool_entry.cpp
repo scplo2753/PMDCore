@@ -42,7 +42,8 @@ void process_single_line(
         ancient_model,
         work_item.parsed_data.getQualityScores(),
         maskedseq,
-        *tls_statics_dict);
+        *tls_statics_dict,
+        *tls_denominator_table);
 
     std::string output_line = line;
     if (IS_USED_maskterminaldeaminations || IS_USED_maskterminalbases)

@@ -1,5 +1,6 @@
 #pragma once
 #include "utility.hpp"
+#include "statics_types.hpp" 
 #include <string>
 #include <string_view>
 #include <map>
@@ -27,7 +28,7 @@ class calPMD
 {
 public:
     /**
-     * @brief Constructs a calPMD object and initializes its members based on the provided parameters. 
+     * @brief Constructs a calPMD object and initializes its members based on the provided parameters.
      *        It calculates the PMD score by iterating through the real read and reference sequence, applying the ancient and modern deamination models, and updating mismatch dictionaries accordingly.
      * @param[in] real_data A real_data_t object containing the real read and reference sequence
      * @param[in] modern_model_deam A vector of doubles representing the modern deamination model
@@ -35,13 +36,15 @@ public:
      * @param[in] quals A string_view representing the quality scores of the read
      * @param[in] maskedseq_input A string representing the masked sequence
      * @param[in] statics_dict A statics_dicts_t object for managing mismatch dictionaries
+     * @param[in] statics_nucleo_total_table_t object for managing nucleotide totals
      * @note The constructor assumes that the input sequences and quality scores are valid and properly formatted.
      */
     calPMD(real_data_t &&real_data, 
         const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, 
         std::string_view quals, 
         const std::string &maskedseq, 
-        statics_dicts_t &statics_dict);
+        statics_dicts_t &statics_dict,
+        statics_denominator_table_t &nucleo_total_table);
 
     ~calPMD() = default;
 
@@ -68,14 +71,17 @@ private:
     match_dict_t& mismatch_dict;
     match_dict_t& mismatch_dict_CpG_rev;
     match_dict_t& mismatch_dict_rev;
-    statics_dicts_t& statics_dict;  // 为了存取mutex
+    statics_dicts_t& statics_dict;  // to read and update mismatch dictionaries
+
+    statics_denominator_table_t& statics_denominator_table; // to read and update nucleotide totals
 
     L_MD_t L_MD;
 
     double LR;
 
     void calPMD_loop();
-    void platypus(const int &start_distance, const int &backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos,int addition);
+    void platypus(const int &start_distance, const int &backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
     int computeDegradationScore(int start_distance, int backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev);
     void function_maskterminaldeam_init_maskedseq(int start_distance, int backstart_distance, bool is_reverse_context);
+    std::vector<double>* choose_nucleo_total_table_vector(const char &base,statics_nucleo_total_table_t &denominator_table);
 };

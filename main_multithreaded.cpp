@@ -16,6 +16,7 @@
 #include "ThreadPool_entry.hpp"
 #include "utilities_wrappers.hpp"
 #include "statics.hpp"
+#include "statics_types.hpp"
 
 //#define __DEBUG__ ///Enable debug module for compare result with origin program output
 //#define __VERBOSE__
@@ -40,9 +41,36 @@ static void merge_statics_dicts(statics_dicts_t &dst, const statics_dicts_t &src
     merge_match_dicts(dst.mismatch_dict_CpG_rev, src.mismatch_dict_CpG_rev);
 }
 
+static void merge_denominator_tables(statics_denominator_table_t &dst, const statics_denominator_table_t &src)
+{
+    for (size_t i = 0; i < FLAGS_range; ++i)
+    {
+        dst.forward.C[i] += src.forward.C[i];
+        dst.forward.A[i] += src.forward.A[i];
+        dst.forward.G[i] += src.forward.G[i];
+        dst.forward.T[i] += src.forward.T[i];
+
+        dst.reverse.C[i] += src.reverse.C[i];
+        dst.reverse.A[i] += src.reverse.A[i];
+        dst.reverse.G[i] += src.reverse.G[i];
+        dst.reverse.T[i] += src.reverse.T[i];
+
+        dst.forward_CpG.C[i] += src.forward_CpG.C[i];
+        dst.forward_CpG.A[i] += src.forward_CpG.A[i];
+        dst.forward_CpG.G[i] += src.forward_CpG.G[i];
+        dst.forward_CpG.T[i] += src.forward_CpG.T[i];
+
+        dst.reverse_CpG.C[i] += src.reverse_CpG.C[i];
+        dst.reverse_CpG.A[i] += src.reverse_CpG.A[i];
+        dst.reverse_CpG.G[i] += src.reverse_CpG.G[i];
+        dst.reverse_CpG.T[i] += src.reverse_CpG.T[i];
+    }
+}
+
 int main(int argc, char *argv[])
 {
     initCMDParse(argc, argv);
+    size_t range = FLAGS_range;
 
     constexpr size_t BUFFER_SIZE = 1024 * 1024;
     char *buffer = new char[BUFFER_SIZE];
@@ -52,8 +80,10 @@ int main(int argc, char *argv[])
     std::cout << "Processing the input file..." << std::endl;
     #endif
 
+    // ======Initialize the ancient and modern deamination models=======
     std::vector<double> ancient_model_deam = ancientModelDeam_wrapper();
     std::vector<double> modern_model_deam(1000, 0.001);
+    //==========================end=========================
 
     // ============ multi thread config ============
     size_t thread_count = std::thread::hardware_concurrency();
@@ -62,13 +92,19 @@ int main(int argc, char *argv[])
 
     std::vector<statics_dicts_t> thread_statics(thread_count);
     std::vector<std::string> thread_output_buffers; // removed per-thread external buffers; kept empty for compatibility
+    std::vector<statics_denominator_table_t> denominator_tables(thread_count,statics_denominator_table_t(range));
 
     ThreadPool thread_pool(
         thread_count, [&](size_t index)
         { 
             tls_statics_dict = &thread_statics[index];
-            tls_output_buffer.buffer.reserve(OUTPUT_BUFFER_FLUSH_SIZE); });
+            tls_denominator_table = &denominator_tables[index];
+            tls_output_buffer.buffer.reserve(OUTPUT_BUFFER_FLUSH_SIZE); 
+        });
+        
+    #ifdef __VERBOSE__
     std::cout << "Using " << thread_pool.get_thread_count() << " threads" << std::endl;
+    #endif
     // ============= end ======================
 
     // std::ios::sync_with_stdio(false);
@@ -94,7 +130,7 @@ int main(int argc, char *argv[])
 
         // is line reversed
         bool isReverse=false;
-        if ((std::stoi(raw_data.FLAG) & 16) == 1)
+        if ((std::stoi(raw_data.FLAG) & 16) != 0)
         {
             isReverse = true;
         }
@@ -120,7 +156,7 @@ int main(int argc, char *argv[])
 
         parsedData data_ptr(raw_data);
         alignnmentData_t alignnmentData;
-        if (DSfield==false||FLAGS_writesamfield || IS_USED_basic && FLAGS_basic > 0||FLAGS_terminal) // not complete yet
+        if (DSfield == false || IS_USED_basic && FLAGS_basic > 0 || FLAGS_terminal) // not complete yet
         {
             int result = ReconstructAlignmentAndRefSeq(data_ptr, alignnmentData);
             if (result == -1)
@@ -183,10 +219,15 @@ int main(int argc, char *argv[])
     #endif
 
     statics_dicts_t merged_statics;
+    statics_denominator_table_t merged_denominator_table(range);
 
     for (auto &local_statics : thread_statics)
     {
         merge_statics_dicts(merged_statics, local_statics);
+    }
+    for (auto &local_denominator_table : denominator_tables)
+    {
+        merge_denominator_tables(merged_denominator_table, local_denominator_table);
     }
 
     /**
@@ -198,7 +239,11 @@ int main(int argc, char *argv[])
 
     if (FLAGS_platypus)
     {
-        statics(merged_statics);
+        platypus_result_struct platypus_result;
+        platypus_result_struct denominator_result;
+        init_platypus_result_struct(platypus_result, denominator_result);
+        statics(merged_statics, platypus_result, merged_denominator_table);
+        print_statics_result(platypus_result);
     }
 
     return 0;

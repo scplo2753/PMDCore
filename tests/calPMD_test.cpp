@@ -29,7 +29,8 @@ TEST_F(calPMDTest, threshold_filter_returns_true_for_PerfectMatch)
     std::string quals = "IIII";
     std::string maskedseq = "AAAA";
 
-    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict);
+    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
 
     EXPECT_TRUE(pmd.threshold_filter());
     EXPECT_TRUE(statics_dict.mismatch_dict.empty());
@@ -49,7 +50,8 @@ TEST_F(calPMDTest, platypus_increments_mismatch_dictionaries_for_CT_Mismatch)
     std::string quals = "IIII";
     std::string maskedseq = "TTTT";
 
-    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict);
+    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
 
     EXPECT_EQ(statics_dict.mismatch_dict["CT0"], 1);
     EXPECT_EQ(statics_dict.mismatch_dict_rev["CT3"], 1);
@@ -68,7 +70,8 @@ TEST_F(calPMDTest, ThresholdFilterRespectsConfiguredBounds)
     std::string quals = "IIII";
     std::string maskedseq = "AAAA";
 
-    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict);
+    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
 
     EXPECT_FALSE(pmd.threshold_filter());
 }

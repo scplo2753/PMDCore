@@ -161,7 +161,7 @@ bool isGCcontentInRange(alignnmentData_t& alignmentData)
 {
     int C_content = std::count(alignmentData.ref_seq.cbegin(), alignmentData.ref_seq.cend(), 'C');
     int G_content = std::count(alignmentData.ref_seq.cbegin(), alignmentData.ref_seq.cend(), 'G');
-    float GC_content = 1.0 * (C_content + G_content) / alignmentData.ref_seq.length();
+    double GC_content = 1.0 * (C_content + G_content) / alignmentData.ref_seq.length();
     if (GC_content > FLAGS_maxGC || GC_content < FLAGS_minGC)
     {
         return false;

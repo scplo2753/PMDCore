@@ -59,7 +59,20 @@ DEFINE_uint32(requirebaseq, 0, "only process bases with base quality at least th
 DEFINE_bool(header,false,"output the sam header")
 
 //others
-DEFINE_bool(writesamfield, false, "add 'DS:Z:<PMDS>' field to SAM output, will overwrite if already present")
+//DEFINE_bool(writesamfield, false, "add 'DS:Z:<PMDS>' field to SAM output, will overwrite if already present")
 
 ///@todo list of params that not yet implemented
 //DEFINE_bool(basecomposition, false, "basecomposition")
+//DEFINE_bool(adjustss,false,"strand orientation aware penalization of base qualities for single stranded libraries (use with --CpG for udg-treated ss libs)")
+//DEFINE_uint32(number,(10**20),"stop after these many reads have been processed")
+//DEFINE_uint32(readlength,0,"only process sequences with this read length")
+//DEFINE_uint32(maxlength,300,"only process sequences with max this read length")
+//DEFINE_uint32(minlength,0,"only process sequences with min this read length")
+//DEFINE_bool(deamination,false,"output base frequencies in the read at positions where there are C or G in the reference")
+//--UDGplus a.k.a --CpG
+//DEFINE_bool(PMDSprim,false,"PMDSprim)
+//DEFINE_double(PMDSprimthreshold,0,"only use Cs and Gs in CpG context") ///@note on original source code, this param is float type, but default value is 'False'
+//DEFINE_bool(UDGhalf,false,"only use Cs and Gs in CpG context, the first and last base are used regardless of dinucleotide context")
+//DEFINE_bool(UDGminus,false,"use all bases (placeholder)")
+//DEFINE_bool(EcoliCpG,false,"Ecoli CpG (first 5' position and two 3' positions and CpG context)")
+//DEFINE_bool(Ecoli,false,"Ecoli (first 5' position and two 3' positions only)")

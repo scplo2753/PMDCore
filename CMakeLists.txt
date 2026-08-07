@@ -26,8 +26,10 @@ add_executable(PMDCore main_multithreaded.cpp)
 
 option(PMDCORE_STATIC_DEPS "Prefer static third-party/internal libraries" OFF)
 
-if(NOT PMDCORE_STATIC_DEPS)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+if(PMDCORE_STATIC_DEPS)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build libraries as shared objects" FORCE)
+else()
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build libraries as shared objects" FORCE)
 endif()
 
 add_subdirectory(third_party/matplotplusplus)
@@ -40,7 +42,7 @@ target_link_libraries(PMDCore PRIVATE SRC
 matplot argparse Threads::Threads wrappers)
 
 if(PMDCORE_STATIC_DEPS AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set_target_properties(PMDCore PRIVATE -static-libgcc -static-libstdc++)
+    target_link_options(PMDCore PRIVATE -static-libgcc -static-libstdc++)
 endif()
 
 if(BUILD_TESTING)

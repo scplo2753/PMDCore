@@ -86,6 +86,8 @@ private:
     double LR;
 
     void calPMD_loop();
+    void platypus_forward(size_t start_distance, const char &real_ref_seq_pos, const char &real_read_pos);
+    void platypus_backward(size_t start_distance,size_t backstart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
     void platypus(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
     int computeDegradationScore(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev);
     void function_maskterminaldeam_init_maskedseq(size_t start_distance, size_t backstart_distance, bool is_reverse_context);

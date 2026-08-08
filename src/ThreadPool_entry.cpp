@@ -35,7 +35,13 @@ void process_single_line(
     const std::vector<std::string> &split_record,
     bool is_reverse)
 {
-    assert(tls_statics_dict != nullptr);
+    if(tls_statics_dict == nullptr || tls_denominator_table == nullptr)
+    {
+        throw std::runtime_error("Thread-local statics_dict or denominator_table is not initialized.");
+    }
+
+    try
+    {
     calPMD calPMD_instance(
         real_data_t{work_item.parsed_data.getReadSeq(), work_item.alignment_data.ref_seq},
         modern_model,
@@ -44,6 +50,8 @@ void process_single_line(
         maskedseq,
         *tls_statics_dict,
         *tls_denominator_table);
+
+            maskedseq = calPMD_instance.get_maskedSeq();
 
     std::string output_line = line;
     if (IS_USED_maskterminaldeaminations || IS_USED_maskterminalbases)
@@ -69,4 +77,10 @@ void process_single_line(
      * @todo imple dry
      * @todo imple printalignments
      */
+    }
+    catch (const std::invalid_argument &e)
+    {
+        std::cerr << "Error in calPMD constructor: " << e.what() << std::endl;
+        return;
+    }
 }

@@ -11,12 +11,12 @@ using std::string_view;
 
 struct L_MD_t
 {
-    float L_D = 1.0;
-    float L_M = 1.0;
-    float L_D_max = 1.0;
-    float L_M_max = 1.0;
-    float L_D_min = 1.0;
-    float L_M_min = 1.0;
+    double L_D = 1.0;
+    double L_M = 1.0;
+    double L_D_max = 1.0;
+    double L_M_max = 1.0;
+    double L_D_min = 1.0;
+    double L_M_min = 1.0;
 };
 
 /**
@@ -48,12 +48,18 @@ public:
 
     ~calPMD() = default;
 
+    calPMD(const calPMD &) = delete;
+    calPMD& operator=(const calPMD&) = delete;
+    calPMD(calPMD&&) = delete;
+    calPMD& operator=(calPMD&&) = delete;
+
     /**
      * @brief This function checks if the calculated likelihood ratio (LR) falls within the specified threshold range. 
      *        It returns true if the LR is greater than or equal to the lower threshold and less than the upper threshold, indicating that the PMD score meets the filtering criteria.
      * @returns true if the LR is within the threshold range, false otherwise
      */
     bool threshold_filter();
+    const std::string& get_maskedSeq() const noexcept { return maskedseq; }
 
 private:
     std::string real_read;
@@ -63,9 +69,9 @@ private:
     std::string maskedseq;
     const std::vector<double> &ancient_model_deam;
     const std::vector<double> &modern_model_deam;
-    int start_pos;
-    int backStart_pos;
-    int real_read_length;
+    size_t start_pos;
+    size_t backStart_pos;
+    size_t real_read_length;
 
     match_dict_t& mismatch_dict_CpG;
     match_dict_t& mismatch_dict;
@@ -80,8 +86,8 @@ private:
     double LR;
 
     void calPMD_loop();
-    void platypus(const int &start_distance, const int &backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
-    int computeDegradationScore(int start_distance, int backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev);
-    void function_maskterminaldeam_init_maskedseq(int start_distance, int backstart_distance, bool is_reverse_context);
+    void platypus(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
+    int computeDegradationScore(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev);
+    void function_maskterminaldeam_init_maskedseq(size_t start_distance, size_t backstart_distance, bool is_reverse_context);
     std::vector<double>* choose_nucleo_total_table_vector(const char &base,statics_nucleo_total_table_t &denominator_table);
 };

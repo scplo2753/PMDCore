@@ -102,7 +102,10 @@ void calPMD::calPMD_loop()
 
         if (FLAGS_platypus)
         {
-            platypus(start_distance, backStart_distance, real_ref_seq[site], real_read[site]);
+            if(start_distance<FLAGS_range)
+                platypus_forward(start_distance, real_ref_seq[site], real_read[site]);
+            if (backStart_distance < FLAGS_range)
+                platypus_backward(start_distance,backStart_distance, real_ref_seq[site], real_read[site]);
         }
         ///@todo implement options.deamination
 
@@ -111,19 +114,10 @@ void calPMD::calPMD_loop()
             continue;
         else if (result == -2)
             break;
-
-        // Compute degradation score
     }
 }
 
-/**
- * @brief This function processes a site in the read and updates the mismatch dictionaries based on the provided parameters.
- * @param[in] start_distance The distance from the start of the read
- * @param[in] backStart_distance The distance from the end of the read
- * @param[in] real_ref_seq_pos The reference sequence base at the current position
- * @param[in] real_read_pos The read base at the current position
- */
-void calPMD::platypus(const int &start_distance, const int &backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos)
+void calPMD::platypus_forward(size_t start_distance, const char &real_ref_seq_pos, const char &real_read_pos)
 {
     bool CpGcheck = false;
     std::string the_key = "";
@@ -139,7 +133,7 @@ void calPMD::platypus(const int &start_distance, const int &backStart_distance, 
     the_key.push_back(real_ref_seq_pos);
     the_key.push_back(real_read_pos);
     the_key += std::to_string(start_distance);
-    
+
     {
         std::lock_guard<std::mutex> lock(statics_dict.dict_mutex); // only lock when modifying the dictionary
         if (CpGcheck == true)
@@ -161,6 +155,87 @@ void calPMD::platypus(const int &start_distance, const int &backStart_distance, 
             }
         }
     }
+}
+
+void calPMD::platypus_backward(size_t start_distance,size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos)
+{
+    std::string the_key = "";
+    bool CpGcheck = false;
+    if (start_distance > 0) // make sure not out of range
+    {
+        if (real_ref_seq.at(start_distance - 1) == 'C' && real_ref_seq.at(start_distance) == 'G')
+        {
+            CpGcheck = true;
+        }
+    }
+    the_key.push_back(real_ref_seq_pos);
+    the_key.push_back(real_read_pos);
+    the_key += std::to_string(backStart_distance);
+
+    //set lock only when modifying the dictionary
+    {
+        std::lock_guard<std::mutex> lock(statics_dict.dict_mutex);
+        if (CpGcheck == true)
+        {
+            ++mismatch_dict_CpG_rev[the_key];
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.reverse_CpG);
+            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
+            {
+                nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
+            }
+        }
+        else
+        {
+            ++mismatch_dict_rev[the_key];
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.reverse);
+            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
+            {
+                nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
+            }
+        }
+    }
+}
+
+void calPMD::platypus(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos)
+{
+    bool CpGcheck = false;
+    std::string the_key = "";
+    if (start_distance + 1 < real_ref_seq.length())
+    {
+        if (real_ref_seq.at(start_distance) == 'C' && real_ref_seq.at(start_distance + 1) == 'G')
+        {
+            CpGcheck = true;
+        }
+    }
+
+    //count 5' end
+    the_key.push_back(real_ref_seq_pos);
+    the_key.push_back(real_read_pos);
+    the_key += std::to_string(start_distance);
+    
+    {
+        std::lock_guard<std::mutex> lock(statics_dict.dict_mutex); // only lock when modifying the dictionary
+        if(static_cast<size_t>(start_distance) < FLAGS_range)
+        if (CpGcheck == true)
+        {
+            ++mismatch_dict_CpG[the_key];
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.forward_CpG);
+            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
+            {
+                nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
+            }
+        }
+        else
+        {
+            ++mismatch_dict[the_key];
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.forward);
+            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
+            {
+                nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
+            }
+        }
+    }
+    //=================================end========================================
 
     // count 3' end
     CpGcheck = false;
@@ -179,6 +254,7 @@ void calPMD::platypus(const int &start_distance, const int &backStart_distance, 
     //set lock only when modifying the dictionary
     {
         std::lock_guard<std::mutex> lock(statics_dict.dict_mutex);
+        if(static_cast<size_t>(backStart_distance) < FLAGS_range)
         if (CpGcheck == true)
         {
             ++mismatch_dict_CpG_rev[the_key];

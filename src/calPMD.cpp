@@ -1,3 +1,4 @@
+#include <cassert>
 #include "calPMD.hpp"
 #include "arguments.hpp"
 #include <algorithm>
@@ -21,13 +22,29 @@ calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_
                                                                                                                                                                                                                                   statics_dict(statics_dict),
                                                                                                                                                                                                                                   statics_denominator_table(denominator_table)
 {
-    real_read_length = std::min({real_read.length(), real_ref_seq.length(), quals.length()});
+    assert(quals.size() >= real_read.size());
+    const bool masking_enabled =
+        IS_USED_maskterminaldeaminations || IS_USED_maskterminalbases;
+    assert(!masking_enabled || maskedseq.size() == real_read.size());
+
+    real_read_length = std::min({real_read.size(), real_ref_seq.size()});
+    if (ancient_model_deam.size() < real_read.size())
+    {
+        throw std::invalid_argument(
+            "ancient deamination model is shorter than the read");
+    }
+
+    if (modern_model_deam.size() < real_read.size())
+    {
+        throw std::invalid_argument(
+            "modern deamination model is shorter than the read");
+    }
     start_pos = 0;
     backStart_pos = real_read.length() > 0 ? real_read.length() - 1 : 0;
 
     if (FLAGS_CpG)
     {
-        if (real_ref_seq.find_first_of("CG") == string_view::npos)
+        if (real_ref_seq.find('C') == std::string::npos && real_ref_seq.find('G') == std::string::npos)
         {
             L_MD.L_D = 1.0;
             L_MD.L_M = 1.0;
@@ -44,6 +61,11 @@ calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_
     }
     //---end----
     calPMD_loop();
+
+    LR = std::log(L_MD.L_D) - std::log(L_MD.L_M);
+    assert(std::isfinite(LR));
+    ///@todo implement if options.PMDSprim
+    quals = temp_quals;
 }
 
 /**
@@ -62,12 +84,12 @@ void calPMD::calPMD_loop()
     std::string qualsRev(quals.data(), quals.size());
     std::reverse(qualsRev.begin(), qualsRev.end());
 
-    for (int site = 0; site < real_read_length; ++site)
+    for (size_t site = 0; site < real_read_length; ++site)
     {
         if (real_read[site] == 'N' || real_ref_seq[site] == 'N' || real_ref_seq[site] == '-')
             continue;
-        int start_distance = site - start_pos;
-        int backStart_distance = backStart_pos - site;
+        size_t start_distance = site - start_pos;
+        size_t backStart_distance = backStart_pos - site;
 
         ///@todo implement if FLAGS_adjustbaseq_all
         ///@todo implement if FLAGS_adjustss:
@@ -84,7 +106,7 @@ void calPMD::calPMD_loop()
         }
         ///@todo implement options.deamination
 
-        int result = computeDegradationScore(start_distance, backStart_distance, real_ref_seq[site], real_read[site], qualsRev);
+        const int result = computeDegradationScore(start_distance, backStart_distance, real_ref_seq[site], real_read[site], qualsRev);
         if (result == -1)
             continue;
         else if (result == -2)
@@ -197,7 +219,7 @@ void calPMD::platypus(const int &start_distance, const int &backStart_distance, 
  *         -2 when processing should stop early.
  *          0 when the position was processed normally.
  */
-int calPMD::computeDegradationScore(int start_distance, int backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev)
+int calPMD::computeDegradationScore(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev)
 {
     if (start_distance >= real_read_length)
         return -1;
@@ -205,7 +227,8 @@ int calPMD::computeDegradationScore(int start_distance, int backStart_distance, 
     {
         if (FLAGS_CpG)
         {
-            if (start_distance + 1 >= real_ref_seq.length())
+            if (start_distance + 1 >= real_read.size() ||
+                start_distance + 1 >= real_ref_seq.size())
                 return -2;
             if (real_ref_seq.at(start_distance + 1) != 'G')
                 return -1;
@@ -265,9 +288,7 @@ int calPMD::computeDegradationScore(int start_distance, int backStart_distance, 
         }
     }
 
-    LR = std::log(L_MD.L_D / L_MD.L_M);
 
-    quals = temp_quals;
     return 0;
 }
 
@@ -289,21 +310,22 @@ bool calPMD::threshold_filter()
  * @param[in] is_reverse_context A boolean indicating if the sequence is in reverse orientation
  * @note The function checks the FLAGS_maskterminaldeaminations and FLAGS_ss flags to determine
  */
-void calPMD::function_maskterminaldeam_init_maskedseq(int start_distance, int backstart_distance, bool is_reverse_context)
+void calPMD::function_maskterminaldeam_init_maskedseq(size_t start_distance, size_t backstart_distance, bool is_reverse_context)
 {
     if (!IS_USED_maskterminaldeaminations)
     {
         return;
     }
 
-    if (start_distance <= FLAGS_maskterminaldeaminations)
-    {
-        maskedseq = real_read.substr(0, start_distance) + "N" + real_read.substr(start_distance + 1);
-    }
-    else if (backstart_distance <= FLAGS_maskterminaldeaminations && (FLAGS_ss || is_reverse_context))
-    {
-        maskedseq = real_read.substr(0, start_distance) + "N" + real_read.substr(start_distance + 1);
-    }
+    const bool should_mask = start_distance <= FLAGS_maskterminaldeaminations ||
+                             (backstart_distance <= FLAGS_maskterminaldeaminations &&
+                              (FLAGS_ss || is_reverse_context));
+
+    if(!should_mask)
+        return;
+
+    assert(start_distance < maskedseq.size());
+    maskedseq[start_distance] = 'N';
 }
 
 std::vector<double>* calPMD::choose_nucleo_total_table_vector(const char &base,statics_nucleo_total_table_t &nucleo_total_table)

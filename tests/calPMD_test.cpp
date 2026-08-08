@@ -75,3 +75,33 @@ TEST_F(calPMDTest, ThresholdFilterRespectsConfiguredBounds)
 
     EXPECT_FALSE(pmd.threshold_filter());
 }
+
+TEST_F(calPMDTest, EmptyMaskedSequenceIsAllowedWhenMaskingIsDisabled)
+{
+    statics_dicts_t statics_dict{};
+    real_data_t real_data{"AAAA", "AAAA"};
+    std::vector<double> modern_model_deam(4, 0.01);
+    std::vector<double> ancient_model_deam(4, 0.01);
+    std::string quals = "IIII";
+    std::string maskedseq;
+
+    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
+
+    EXPECT_TRUE(pmd.get_maskedSeq().empty());
+}
+
+TEST_F(calPMDTest, CpGCheckHandlesReferenceShorterThanRead)
+{
+    FLAGS_CpG = true;
+
+    statics_dicts_t statics_dict{};
+    real_data_t real_data{"TT", "C"};
+    std::vector<double> modern_model_deam(2, 0.01);
+    std::vector<double> ancient_model_deam(2, 0.01);
+    std::string quals = "II";
+    std::string maskedseq;
+
+    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    EXPECT_NO_THROW(calPMD(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom));
+}

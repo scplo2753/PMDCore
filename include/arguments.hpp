@@ -8,8 +8,11 @@
  * 
  */
 #pragma once
+#include <string>
+#include <string_view>
+#include <vector>
 #include "argparse/argparse.hpp"
-#include "utility.hpp"
+#include "alignment/alignment.hpp"
 #include "parsedData.hpp"
 
 // X-Macro

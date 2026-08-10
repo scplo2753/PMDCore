@@ -1,5 +1,7 @@
 #include "parsedData.hpp"
 #include <algorithm>
+#include <stdexcept>
+#include "utilities/sequence_utils.hpp"
 
 static bool isCigarOp(char c)
 {
@@ -34,15 +36,16 @@ void parsedData::set_ReadSeq_reverseSeq()
     flag_isReadReversed = true;
 }
 
-bool parsedData::isStatusFlagSet(int flag) const
+bool parsedData::isStatusFlagSet(SamFlag flag) const
 {
+    const auto flag_value = static_cast<int>(flag);
     try
     {
-        return std::stoi(data.FLAG) & flag;
+        return std::stoi(data.FLAG) & flag_value;
     }
     catch (const std::invalid_argument& e)
     {
-        if (flag == 0x10 || data.FLAG.find('r') != std::string::npos)
+        if (flag == SamFlag::READ_REVERSE_STRAND || data.FLAG.find('r') != std::string::npos)
         {
             return true;
         }

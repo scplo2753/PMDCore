@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <vector>
-#include "utilities_math.hpp"
+#include "utilities/probability_utils.hpp"
+#include "pmd/deamination_model.hpp"
 
 TEST(utilities_math, prob2phred)
 {

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
-#include "utility.hpp"
+#include "utilities/sequence_utils.hpp"
+#include "utilities/string_utils.hpp"
 
 using std::string;
 using std::vector;
@@ -30,15 +31,16 @@ string sample_alphabetString = "abcdefg";
 string sample_upperAlphabetString = "HIJKLMN";
 string sample_numberAlphaMixed = "12345ABCDEFG";
 
-TEST(utility,isStringDigit)
+TEST(utility,parseUnsignedInteger)
 {
-    EXPECT_TRUE(isStringDigit(sample_digitString));
-    EXPECT_TRUE(isStringDigit(sample_negativeDigitString));
-    EXPECT_TRUE(isStringDigit(sample_negativeNumberWithPoint));
-    EXPECT_TRUE(isStringDigit(sample_numberWithPoint));
-    EXPECT_FALSE(isStringDigit(sample_numberAlphaMixed));
-    EXPECT_FALSE(isStringDigit(sample_alphabetString));
-    EXPECT_FALSE(isStringDigit(sample_upperAlphabetString));
+    EXPECT_EQ(parse_unsigned_integer("123456"), 123456U);
+    EXPECT_FALSE(parse_unsigned_integer(sample_digitString)); // unsigned-int overflow
+    EXPECT_FALSE(parse_unsigned_integer(sample_negativeDigitString));
+    EXPECT_FALSE(parse_unsigned_integer(sample_negativeNumberWithPoint));
+    EXPECT_FALSE(parse_unsigned_integer(sample_numberWithPoint));
+    EXPECT_FALSE(parse_unsigned_integer(sample_numberAlphaMixed));
+    EXPECT_FALSE(parse_unsigned_integer(sample_alphabetString));
+    EXPECT_FALSE(parse_unsigned_integer(sample_upperAlphabetString));
 }
 
 TEST(utility,isStringAlphabet)

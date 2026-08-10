@@ -1,6 +1,7 @@
 #include "arguments.hpp"
 #include <algorithm>
 #include <ranges>
+#include "utilities/sequence_utils.hpp"
 
 #define DEFINE_bool(name, default_val, help_text) \
     bool FLAGS_##name = default_val; \

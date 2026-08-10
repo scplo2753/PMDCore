@@ -35,38 +35,38 @@ void process_single_line(
     const std::vector<std::string> &split_record,
     bool is_reverse)
 {
-    if(tls_statics_dict == nullptr || tls_denominator_table == nullptr)
+    if(tls_statics_dict == nullptr || tls_platypus_denominator_table == nullptr)
     {
-        throw std::runtime_error("Thread-local statics_dict or denominator_table is not initialized.");
+        throw std::runtime_error("Thread-local platypus_statics_dict or denominator_table is not initialized.");
     }
 
     try
     {
-    calPMD calPMD_instance(
-        real_data_t{work_item.parsed_data.getReadSeq(), work_item.alignment_data.ref_seq},
-        modern_model,
-        ancient_model,
-        work_item.parsed_data.getQualityScores(),
-        maskedseq,
-        *tls_statics_dict,
-        *tls_denominator_table);
+        calPMD calPMD_instance(
+            real_data_t{work_item.parsed_data.getReadSeq(), work_item.alignment_data.ref_seq},
+            modern_model,
+            ancient_model,
+            work_item.parsed_data.getQualityScores(),
+            maskedseq,
+            *tls_statics_dict,
+            *tls_platypus_denominator_table);
 
-            maskedseq = calPMD_instance.get_maskedSeq();
+        maskedseq = calPMD_instance.get_maskedSeq();
 
-    std::string output_line = line;
-    if (IS_USED_maskterminaldeaminations || IS_USED_maskterminalbases)
-    {
-        std::string real_read = maskedseq;
-        function_in_thread_pool_maskterminaldeam_or_maskterminalbases(maskedseq, real_read, is_reverse, split_record, output_line);
-    }
-
-    if (IS_USED_threshold)
-    {
-        if (calPMD_instance.threshold_filter())
+        std::string output_line = line;
+        if (IS_USED_maskterminaldeaminations || IS_USED_maskterminalbases)
         {
-            buffered_output_line(output_line);
+            std::string real_read = maskedseq;
+            function_in_thread_pool_maskterminaldeam_or_maskterminalbases(maskedseq, real_read, is_reverse, split_record, output_line);
         }
-    }
+
+        if (IS_USED_threshold)
+        {
+            if (calPMD_instance.threshold_filter())
+            {
+                buffered_output_line(output_line);
+            }
+        }
 
     /***
      * @todo imple functions about add PMDS tag

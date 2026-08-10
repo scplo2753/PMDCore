@@ -1,6 +1,7 @@
 #pragma once
-#include "utility.hpp"
+#include <string_view>
 #include "arguments.hpp"
+#include "sam/struct_record.hpp"
 
 inline bool lengthFilter(const recordLine_struct_t &data);
 

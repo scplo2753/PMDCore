@@ -1,5 +1,7 @@
 #include "seqProcedures.hpp"
 #include "arguments.hpp"
+#include "utilities/sequence_utils.hpp"
+#include "utilities/string_utils.hpp"
 
 
 bool isLegalData(const recordLine_struct_t &data)
@@ -13,19 +15,19 @@ bool isLegalData(const recordLine_struct_t &data)
 }
 
 
-int splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, recordLine_struct_t &data)
+ParseError splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, recordLine_struct_t &data)
 {
     std::vector<std::string> fields(split(line));
     
     if (fields.size() < 11)
-        return BAD_RECORD_HAVE_EMPTY_FIELD;
+        return ParseError::BAD_RECORD_HAVE_EMPTY_FIELD;
     
     for(auto &field: fields)
     {
         if(field.empty())
         {
             std::cout << "Warning: Empty field detected in the input data. This line will be skipped." << std::endl;
-            return BAD_RECORD_HAVE_EMPTY_FIELD;
+            return ParseError::BAD_RECORD_HAVE_EMPTY_FIELD;
         }
     }
 
@@ -33,18 +35,20 @@ int splitOneLine(const std::string &line, std::vector<std::string> vector_splite
     data.QNAME= fields[0];
 
     if (fields[1].find_first_not_of("0123456789") != std::string::npos)
-        return BAD_RECORD_ILLEGAL_FLAG;
+        return ParseError::BAD_RECORD_ILLEGAL_FLAG;
     data.FLAG = fields[1];
 
     data.RNAME = fields[2];
 
-    if (!isStringDigit(fields[3])|| std::stoi(fields[3]) < 0)
-        return BAD_RECORD_ILLEGAL_POS;
-    data.POS = std::stoi(fields[3]);
+    const auto position = parse_unsigned_integer(fields[3]);
+    if (!position)
+        return ParseError::BAD_RECORD_ILLEGAL_POS;
+    data.POS = *position;
 
-    if (!isStringDigit(fields[4]) || std::stoi(fields[4]) < 0 || std::stoi(fields[4]) > 255)
-        return BAD_RECORD_ILLEGAL_MAPQ;
-    data.MAPQ = std::stoi(fields[4]);
+    const auto mapq = parse_unsigned_integer(fields[4]);
+    if (!mapq || *mapq > 255)
+        return ParseError::BAD_RECORD_ILLEGAL_MAPQ;
+    data.MAPQ = *mapq;
 
     data.cigar = fields[5];
     data.read_seq = fields[9];
@@ -58,7 +62,7 @@ int splitOneLine(const std::string &line, std::vector<std::string> vector_splite
         }
         data.options_map.insert_or_assign(field.substr(0, 2), options_value{field[3], field.substr(5)});
     }
-    return 0;
+    return ParseError::NONE;
 }
 
 
@@ -74,7 +78,8 @@ bool validAndParse(const std::string &Line,std::vector<std::string> vector_split
         }
         return false;
     }
-    splitOneLine(Line,vector_splited_record, data);
+    if (splitOneLine(Line, vector_splited_record, data) != ParseError::NONE)
+        return false;
     if(data.quality_scores.size()<2)
         return false;
     return true;

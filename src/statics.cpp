@@ -2,6 +2,7 @@
 #include <ranges>
 #include "arguments.hpp"
 #include "statics.hpp"
+#include "utilities/math_utils.hpp"
 
 std::vector<string> pairs = {"CT", "CA", "CG", "CC", "GA", "GT", "GC", "GG", "AA", "AT", "AC", "AG", "TA", "TT", "TC", "TG"};
 std::vector<string> CpG_pairs = {"CT", "CA", "CG", "CC", "GA", "GT", "GC", "GG", "AA", "AT", "AC", "AG", "TA", "TT", "TC", "TG"};
@@ -25,12 +26,12 @@ void split_key(const string &key, string &name,int &index)
     }
 }
 
-void statics(statics_dicts_t &statics_dict)
+void statics(platypus_statics_dicts_t &platypus_statics_dict)
 {
-    match_dict_t &mismatch_dict = statics_dict.mismatch_dict;
-    match_dict_t &mismatch_dict_rev = statics_dict.mismatch_dict_rev;
-    match_dict_t &mismatch_dict_CpG = statics_dict.mismatch_dict_CpG;
-    match_dict_t &mismatch_dict_CpG_rev = statics_dict.mismatch_dict_CpG_rev;
+    match_dict_t &mismatch_dict = platypus_statics_dict.mismatch_dict;
+    match_dict_t &mismatch_dict_rev = platypus_statics_dict.mismatch_dict_rev;
+    match_dict_t &mismatch_dict_CpG = platypus_statics_dict.mismatch_dict_CpG;
+    match_dict_t &mismatch_dict_CpG_rev = platypus_statics_dict.mismatch_dict_CpG_rev;
 
     unordered_map<string, int> forward_total_dict;
     unordered_map<string, int> CpG_forward_total_dict;
@@ -223,7 +224,7 @@ void init_platypus_result_struct(platypus_result_struct &platypus_result,platypu
     }
 }
 
-static const std::vector<double>* get_denominator_column(const std::string &result_key, const statics_denominator_table_t &denominator_table)
+static const std::vector<double>* get_denominator_column(const std::string &result_key, const platypus_denominator_table_t &denominator_table)
 {
     const char ref_base = result_key[0];
     const bool is_CpG = result_key.find("_CpG_") != std::string::npos;
@@ -257,11 +258,11 @@ static const std::vector<double>* get_denominator_column(const std::string &resu
     }
 }
 
-void statics(statics_dicts_t &statics_dict, platypus_result_struct &platypus_result, const statics_denominator_table_t &denominator_table)
+void statics(platypus_statics_dicts_t &platypus_statics_dict, platypus_result_struct &platypus_result, const platypus_denominator_table_t &denominator_table)
 {
     string name;
     int index;
-    for (const auto &[key, value] : statics_dict.mismatch_dict)
+    for (const auto &[key, value] : platypus_statics_dict.mismatch_dict)
     {
         split_key(key, name, index);
         if(index>=FLAGS_range)
@@ -271,7 +272,7 @@ void statics(statics_dicts_t &statics_dict, platypus_result_struct &platypus_res
         const string result_key = name + "5";
         platypus_result.at(result_key).at(static_cast<int>(index)) = static_cast<double>(value);
     }
-    for(const auto& [key,value]:statics_dict.mismatch_dict_rev)
+    for(const auto& [key,value]:platypus_statics_dict.mismatch_dict_rev)
     {
         split_key(key, name, index);
         if(index>=FLAGS_range)
@@ -281,7 +282,7 @@ void statics(statics_dicts_t &statics_dict, platypus_result_struct &platypus_res
         const string result_key = name + "3";
         platypus_result.at(result_key).at(static_cast<int>(index)) = static_cast<double>(value);
     }
-    for(const auto& [key,value]:statics_dict.mismatch_dict_CpG)
+    for(const auto& [key,value]:platypus_statics_dict.mismatch_dict_CpG)
     {
         split_key(key, name, index);
         if(index>=FLAGS_range)
@@ -291,7 +292,7 @@ void statics(statics_dicts_t &statics_dict, platypus_result_struct &platypus_res
         const string result_key = name + "_CpG_5";
         platypus_result.at(result_key).at(static_cast<int>(index)) = static_cast<double>(value);
     }
-    for(const auto& [key,value]:statics_dict.mismatch_dict_CpG_rev)
+    for(const auto& [key,value]:platypus_statics_dict.mismatch_dict_CpG_rev)
     {
         split_key(key, name, index);
         if(index>=FLAGS_range)

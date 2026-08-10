@@ -1,6 +1,10 @@
 #pragma once
-#include "utility.hpp"
+#include <string>
+#include <vector>
+#include "alignment/alignment.hpp"
 #include "parsedData.hpp"
+#include "sam/parse_error.hpp"
+#include "sam/struct_record.hpp"
 
 /******
  * @todo: this function is not used yet, but it is a good idea to implement it for future use. It can be used to validate the data before processing.
@@ -42,4 +46,4 @@ bool isGCcontentInRange(alignnmentData_t& alignmentData);
 * @related recordLine_struct_t
 * @return return -1 if line is illegal, otherwise return 0
 *****/
-int splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, recordLine_struct_t &data);
+ParseError splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, recordLine_struct_t &data);

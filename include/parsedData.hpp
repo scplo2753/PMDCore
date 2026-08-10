@@ -1,5 +1,6 @@
 #pragma once
-#include "utility.hpp"
+#include "sam/enum_flags.hpp"
+#include "sam/struct_record.hpp"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -38,20 +39,20 @@ public:
     std::vector<std::string> getMDList() const;
 
     // status flag functions
-    bool isStatusFlagSet(int flag) const;
-    bool isReadPaired() const { return isStatusFlagSet(READ_PAIRED); }
-    bool isProperPair() const { return isStatusFlagSet(PROPER_PAIR); }
-    bool isReadUnmapped() const { return isStatusFlagSet(READ_UNMAPPED); }
-    bool isMateUnmapped() const { return isStatusFlagSet(MATE_UNMAPPED); }
-    bool isReadReverseStrand() const { return isStatusFlagSet(READ_REVERSE_STRAND); }
-    bool isMateReverseStrand() const { return isStatusFlagSet(MATE_REVERSE_STRAND); }
-    bool isFirstInPair() const { return isStatusFlagSet(FIRST_IN_PAIR); }
-    bool isSecondInPair() const { return isStatusFlagSet(SECOND_IN_PAIR); }
-    bool isNotPrimaryAlignment() const { return isStatusFlagSet(NOT_PRIMARY_ALIGNMENT); }
-    bool isReadFailsQualityChecks() const { return isStatusFlagSet(READ_FAILS_QUALITY_CHECKS); }
-    bool isDuplicateRead() const { return isStatusFlagSet(DUPLICATE_READ); }
-    bool isSupplementaryAlignment() const { return isStatusFlagSet(SUPPLEMENTARY_ALIGNMENT); }
-    bool isReversedSeq() const { return isStatusFlagSet(READ_REVERSE_STRAND); }
+    bool isStatusFlagSet(SamFlag flag) const;
+    bool isReadPaired() const { return isStatusFlagSet(SamFlag::READ_PAIRED); }
+    bool isProperPair() const { return isStatusFlagSet(SamFlag::PROPER_PAIR); }
+    bool isReadUnmapped() const { return isStatusFlagSet(SamFlag::READ_UNMAPPED); }
+    bool isMateUnmapped() const { return isStatusFlagSet(SamFlag::MATE_UNMAPPED); }
+    bool isReadReverseStrand() const { return isStatusFlagSet(SamFlag::READ_REVERSE_STRAND); }
+    bool isMateReverseStrand() const { return isStatusFlagSet(SamFlag::MATE_REVERSE_STRAND); }
+    bool isFirstInPair() const { return isStatusFlagSet(SamFlag::FIRST_IN_PAIR); }
+    bool isSecondInPair() const { return isStatusFlagSet(SamFlag::SECOND_IN_PAIR); }
+    bool isNotPrimaryAlignment() const { return isStatusFlagSet(SamFlag::NOT_PRIMARY_ALIGNMENT); }
+    bool isReadFailsQualityChecks() const { return isStatusFlagSet(SamFlag::READ_FAILS_QUALITY_CHECKS); }
+    bool isDuplicateRead() const { return isStatusFlagSet(SamFlag::DUPLICATE_READ); }
+    bool isSupplementaryAlignment() const { return isStatusFlagSet(SamFlag::SUPPLEMENTARY_ALIGNMENT); }
+    bool isReversedSeq() const { return isStatusFlagSet(SamFlag::READ_REVERSE_STRAND); }
 
     // set functions
     void set_ReadSeq_reverseSeq();

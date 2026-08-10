@@ -28,5 +28,150 @@ Related code:
 
 - `include/args.list`
 - `src/calPMD.cpp`
-- `include/statics_types.hpp`
+- `include/statistics/statistics_types.hpp`
 - `tests/calPMD_test.cpp`
+
+## Reference or read context for 5-prime CpG deamination
+
+Status: Open
+
+In the original `pmdtools.0.60.py`, the 5-prime branch of
+`options.deamination` determines CpG context using the observed read:
+
+```python
+if real_read[i + 1] != 'G':
+    continue
+```
+
+The corresponding 3-prime branch uses the reconstructed reference:
+
+```python
+if real_ref_seq[i - 1] != 'C':
+    continue
+```
+
+Other CpG-sensitive paths, including Platypus statistics and PMD
+likelihood scoring, use the reconstructed reference for context on
+both ends.
+
+It remains undecided whether the 5-prime deamination branch should:
+
+1. preserve the original behavior and use `real_read[i + 1]`;
+2. use `real_ref_seq[i + 1]` for symmetric reference-based CpG
+   classification; or
+3. expose the distinction as an explicit compatibility mode.
+
+The current implementation should preserve the original behavior
+until this question is resolved.
+
+Related code:
+
+- `pmdtools.0.60.py`, `options.deamination`
+- `src/calPMD.cpp`, `calPMD::deamination`
+- `src/calPMD.cpp`, `calPMD::computeDegradationScore`
+- `src/calPMD.cpp`, `calPMD::platypus_forward`
+
+## Simultaneous use of `--deamination` and `--platypus`
+
+Status: Resolved for the current C++ implementation; retained here as a
+compatibility note.
+
+The original `pmdtools.0.60.py` allows `options.deamination` and
+`options.platypus` to be enabled at the same time. Both branches update
+some of the same mismatch dictionaries.
+
+The Platypus branch is executed first:
+
+```python
+if options.platypus:
+    # Updates mismatch_dict, mismatch_dict_rev,
+    # mismatch_dict_CpG, and mismatch_dict_CpG_rev.
+```
+
+The deamination branch is then executed independently:
+
+```python
+if options.deamination:
+    # Updates mismatch_dict and mismatch_dict_rev.
+    continue
+```
+
+When both options are enabled, a C- or G-reference position may
+therefore be counted twice in `mismatch_dict` or `mismatch_dict_rev`:
+
+1. once by the Platypus branch;
+2. once by the deamination branch.
+
+The two branches do not always update identical dictionaries. In CpG
+mode, Platypus stores CpG-context observations in:
+
+```text
+mismatch_dict_CpG
+mismatch_dict_CpG_rev
+```
+
+The original deamination branch filters positions by CpG context but
+still stores the resulting observations in:
+
+```text
+mismatch_dict
+mismatch_dict_rev
+```
+
+Consequently, the original program's Platypus output may include
+observations added by the deamination branch, and some observations may
+be counted twice when both options are active. The source does not make
+clear whether this coupling was intentional or an accidental consequence
+of reusing global dictionaries.
+
+### Current C++ behavior
+
+PMDCore allows both options to be enabled, but deliberately keeps their
+statistics independent:
+
+- Platypus updates its mismatch dictionaries and nucleotide denominator
+  tables;
+- deamination updates a separate `deamination_statics_t`, containing
+  forward and reverse terminal counts;
+- thread-local results for the two modes are merged independently;
+- deamination and Platypus results are printed from their respective
+  statistics, so neither mode contributes counts to the other mode's
+  output.
+
+Each mode can therefore observe the same input position, but this is not
+double counting within a shared result. It is one observation in each of
+two independent outputs.
+
+This is an intentional compatibility difference. When both options are
+enabled, PMDCore does not reproduce the original program's shared-dictionary
+side effects or its possible double counting. PMD likelihood scoring remains
+skipped after the deamination branch, matching the original control flow.
+
+`inputParams_validator()` emits a `Caution` message when both options are
+present so that users comparing results with the original implementation are
+made aware of this difference. The combination remains valid and does not
+terminate the program.
+
+Dedicated compatibility tests should cover:
+
+- non-CpG C-reference positions;
+- non-CpG G-reference positions;
+- CpG C-reference positions;
+- CpG G-reference positions;
+- positions inside and outside `FLAGS_range`;
+- independent Platypus and deamination counts when both options are enabled;
+- whether PMD likelihood scoring is skipped after deamination, as in
+  the original implementation.
+
+Related code:
+
+- `pmdtools.0.60.py`, `options.platypus`
+- `pmdtools.0.60.py`, `options.deamination`
+- `src/calPMD.cpp`, `calPMD::calPMD_loop`
+- `src/calPMD.cpp`, `calPMD::platypus_forward`
+- `src/calPMD.cpp`, `calPMD::platypus_backward`
+- `src/calPMD.cpp`, `calPMD::deamination`
+- `include/statistics/statistics_types.hpp`, `platypus_statics_dicts_t`
+- `include/statistics/deam_types.hpp`, `deamination_statics_t`
+- `main_multithreaded.cpp`, independent thread-result merging and output
+- `src/arguments.cpp`, simultaneous-option caution

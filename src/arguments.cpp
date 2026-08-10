@@ -1,6 +1,8 @@
 #include "arguments.hpp"
 #include <algorithm>
+#include <cstdlib>
 #include <ranges>
+#include <stdexcept>
 #include "utilities/sequence_utils.hpp"
 
 #define DEFINE_bool(name, default_val, help_text) \
@@ -28,6 +30,25 @@
 #undef DEFINE_int32
 #undef DEFINE_string
 #undef DEFINE_double
+
+void inputParams_validator()
+{
+    // Validation policy: ../OPEN_QUESTIONS.md#semantics-of---range-0
+    if(FLAGS_range < 0)
+    {
+        throw(std::invalid_argument("--range cannot be negative"));
+    }
+    // Validation policy: ../OPEN_QUESTIONS.md#simultaneous-use-of---deamination-and---platypus
+    if(FLAGS_platypus && FLAGS_deamination)
+    {
+        std::cerr << "Caution: --platypus and --deamination use independent statistics in PMDCore; "
+                     "unlike the original implementation, their counts are not shared or double-counted.\n"
+                  << "See: https://github.com/scplo2753/PMDCore/blob/main/"
+                     "OPEN_QUESTIONS.md"
+                     "#simultaneous-use-of---deamination-and---platypus\n"
+                  << std::endl;
+    }
+}
 
 void initCMDParse(int argc, char *argv[])
 {
@@ -86,6 +107,15 @@ void initCMDParse(int argc, char *argv[])
     #undef DEFINE_uint32
     #undef DEFINE_double
     #undef DEFINE_string
+
+    try{
+        inputParams_validator();
+    }
+    catch(const std::invalid_argument &err)
+    {
+        std::cerr << "Error in input arguments: " << err.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 }
 
 /**

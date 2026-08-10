@@ -24,10 +24,19 @@ calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_
                                                                                                                                                                                                                                                                                                                               platypus_denominator_table(platypus_denominator_table),
                                                                                                                                                                                                                                                                                                                               deam_statics_table(deam_statics_table)
 {
-    assert(quals.size() >= real_read.size());
+    if (quals.size() < real_read.size())
+    {
+        throw std::invalid_argument(
+            "quality sequence is shorter than the read");
+    }
+
     const bool masking_enabled =
         IS_USED_maskterminaldeaminations || IS_USED_maskterminalbases;
-    assert(!masking_enabled || maskedseq.size() == real_read.size());
+    if (masking_enabled && maskedseq.size() != real_read.size())
+    {
+        throw std::invalid_argument(
+            "masked sequence length does not match the read length");
+    }
 
     real_read_length = std::min({real_read.size(), real_ref_seq.size()});
     if (ancient_model_deam.size() < real_read.size())

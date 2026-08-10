@@ -1,9 +1,10 @@
 #pragma once
-#include "utility.hpp"
-#include "statics_types.hpp" 
+#include "alignment/alignment.hpp"
+#include "statistics/statistics_types.hpp"
 #include <string>
 #include <string_view>
 #include <map>
+#include <vector>
 
 using std::map;
 using std::string;
@@ -35,16 +36,16 @@ public:
      * @param[in] ancient_model_deam A vector of doubles representing the ancient deamination model
      * @param[in] quals A string_view representing the quality scores of the read
      * @param[in] maskedseq_input A string representing the masked sequence
-     * @param[in] statics_dict A statics_dicts_t object for managing mismatch dictionaries
-     * @param[in] statics_nucleo_total_table_t object for managing nucleotide totals
+     * @param[in] platypus_statics_dict A platypus_statics_dicts_t object for managing mismatch dictionaries
+     * @param[in,out] platypus_denominator_table Platypus nucleotide totals
      * @note The constructor assumes that the input sequences and quality scores are valid and properly formatted.
      */
     calPMD(real_data_t &&real_data, 
         const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, 
         std::string_view quals, 
         const std::string &maskedseq, 
-        statics_dicts_t &statics_dict,
-        statics_denominator_table_t &nucleo_total_table);
+        platypus_statics_dicts_t &platypus_statics_dict,
+        platypus_denominator_table_t &platypus_denominator_table);
 
     ~calPMD() = default;
 
@@ -77,9 +78,9 @@ private:
     match_dict_t& mismatch_dict;
     match_dict_t& mismatch_dict_CpG_rev;
     match_dict_t& mismatch_dict_rev;
-    statics_dicts_t& statics_dict;  // to read and update mismatch dictionaries
+    platypus_statics_dicts_t& platypus_statics_dict;  // to read and update mismatch dictionaries
 
-    statics_denominator_table_t& statics_denominator_table; // to read and update nucleotide totals
+    platypus_denominator_table_t &platypus_denominator_table; // to read and update nucleotide totals
 
     L_MD_t L_MD;
 

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "calPMD.hpp"
-#include "utility.hpp"
+#include "pmd/likelihood.hpp"
 #include "arguments.hpp"
 
 class calPMDTest : public ::testing::Test {
@@ -23,14 +23,14 @@ protected:
 
 TEST_F(calPMDTest, threshold_filter_returns_true_for_PerfectMatch)
 {
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"AAAA", "AAAA"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
     std::string quals = "IIII";
     std::string maskedseq = "AAAA";
 
-    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
     calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
 
     EXPECT_TRUE(pmd.threshold_filter());
@@ -44,14 +44,14 @@ TEST_F(calPMDTest, platypus_increments_mismatch_dictionaries_for_CT_Mismatch)
 {
     FLAGS_platypus = true;
 
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"TTTT", "CTTT"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
     std::string quals = "IIII";
     std::string maskedseq = "TTTT";
 
-    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
     calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
 
     EXPECT_EQ(statics_dict.mismatch_dict["CT0"], 1);
@@ -64,7 +64,7 @@ TEST_F(calPMDTest, PlatypusOnlyCountsSitesWithinConfiguredRange)
     FLAGS_platypus = true;
     FLAGS_range = 2;
 
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"AAAAAA", "AAAAAA"};
 
     std::vector<double> modern_model_deam(6, 0.01);
@@ -73,7 +73,7 @@ TEST_F(calPMDTest, PlatypusOnlyCountsSitesWithinConfiguredRange)
     std::string quals = "IIIIII";
     std::string maskedseq = "AAAAAA";
 
-    statics_denominator_table_t denom(
+    platypus_denominator_table_t denom(
         static_cast<size_t>(FLAGS_range));
 
     calPMD pmd(
@@ -124,14 +124,14 @@ TEST_F(calPMDTest, PlatypusCountsBothDirectionsWhenTerminalRangesOverlap)
     FLAGS_platypus = true;
     FLAGS_range = 2;
 
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"AAA", "AAA"};
     std::vector<double> modern_model_deam(3, 0.01);
     std::vector<double> ancient_model_deam(3, 0.01);
     std::string quals = "III";
     std::string maskedseq = "AAA";
 
-    statics_denominator_table_t denom(
+    platypus_denominator_table_t denom(
         static_cast<size_t>(FLAGS_range));
 
     calPMD pmd(
@@ -159,14 +159,14 @@ TEST_F(calPMDTest, PlatypusCountsReverseCpGAtReadEnd)
 {
     FLAGS_platypus = true;
 
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"AACA", "AACG"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
     std::string quals = "IIII";
     std::string maskedseq = "AACA";
 
-    statics_denominator_table_t denom(
+    platypus_denominator_table_t denom(
         static_cast<size_t>(FLAGS_range));
 
     calPMD pmd(
@@ -192,14 +192,14 @@ TEST_F(calPMDTest, ThresholdFilterRespectsConfiguredBounds)
     FLAGS_threshold = 1.0;
     FLAGS_upperthreshold = 2.0;
 
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"AAAA", "AAAA"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
     std::string quals = "IIII";
     std::string maskedseq = "AAAA";
 
-    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
     calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
 
     EXPECT_FALSE(pmd.threshold_filter());
@@ -207,14 +207,14 @@ TEST_F(calPMDTest, ThresholdFilterRespectsConfiguredBounds)
 
 TEST_F(calPMDTest, EmptyMaskedSequenceIsAllowedWhenMaskingIsDisabled)
 {
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"AAAA", "AAAA"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
     std::string quals = "IIII";
     std::string maskedseq;
 
-    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
     calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
 
     EXPECT_TRUE(pmd.get_maskedSeq().empty());
@@ -224,13 +224,13 @@ TEST_F(calPMDTest, CpGCheckHandlesReferenceShorterThanRead)
 {
     FLAGS_CpG = true;
 
-    statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t statics_dict{};
     real_data_t real_data{"TT", "C"};
     std::vector<double> modern_model_deam(2, 0.01);
     std::vector<double> ancient_model_deam(2, 0.01);
     std::string quals = "II";
     std::string maskedseq;
 
-    statics_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
+    platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
     EXPECT_NO_THROW(calPMD(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom));
 }

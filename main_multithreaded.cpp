@@ -5,7 +5,6 @@
 #include <math.h>
 #include <thread>
 
-#include "utility.hpp"
 #include "arguments.hpp"
 #include "parsedData.hpp"
 #include "seqProcedures.hpp"
@@ -16,7 +15,8 @@
 #include "ThreadPool_entry.hpp"
 #include "utilities_wrappers.hpp"
 #include "statics.hpp"
-#include "statics_types.hpp"
+#include "statistics/statistics_types.hpp"
+#include "pmd/deamination_model.hpp"
 
 //#define __DEBUG__ ///Enable debug module for compare result with origin program output
 //#define __VERBOSE__
@@ -29,7 +29,7 @@ static void merge_match_dicts(match_dict_t &dst, const match_dict_t &src)
     }
 }
 
-static void merge_statics_dicts(statics_dicts_t &dst, const statics_dicts_t &src)
+static void merge_statics_dicts(platypus_statics_dicts_t &dst, const platypus_statics_dicts_t &src)
 {
     merge_match_dicts(dst.match_dict, src.match_dict);
     merge_match_dicts(dst.match_dict_CpG, src.match_dict_CpG);
@@ -41,7 +41,7 @@ static void merge_statics_dicts(statics_dicts_t &dst, const statics_dicts_t &src
     merge_match_dicts(dst.mismatch_dict_CpG_rev, src.mismatch_dict_CpG_rev);
 }
 
-static void merge_denominator_tables(statics_denominator_table_t &dst, const statics_denominator_table_t &src)
+static void merge_denominator_tables(platypus_denominator_table_t &dst, const platypus_denominator_table_t &src)
 {
     for (size_t i = 0; i < FLAGS_range; ++i)
     {
@@ -90,18 +90,18 @@ int main(int argc, char *argv[])
     if (thread_count == 0)
         thread_count = 1;
 
-    std::vector<statics_dicts_t> thread_statics(thread_count);
+    std::vector<platypus_statics_dicts_t> thread_statics(thread_count);
     std::vector<std::string> thread_output_buffers; // removed per-thread external buffers; kept empty for compatibility
-    std::vector<statics_denominator_table_t> denominator_tables(thread_count,statics_denominator_table_t(range));
+    std::vector<platypus_denominator_table_t> platypus_denominator_tables(thread_count, platypus_denominator_table_t(range));
 
     ThreadPool thread_pool(
         thread_count, [&](size_t index)
         { 
             tls_statics_dict = &thread_statics[index];
-            tls_denominator_table = &denominator_tables[index];
+            tls_platypus_denominator_table = &platypus_denominator_tables[index];
             tls_output_buffer.buffer.reserve(OUTPUT_BUFFER_FLUSH_SIZE); 
         });
-        
+
     #ifdef __VERBOSE__
     std::cout << "Using " << thread_pool.get_thread_count() << " threads" << std::endl;
     #endif
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
         }
 
         // end
-        
+
         double LR=0.0f;
         bool DSfield = false;
         if (raw_data.options_map.find("DS") != raw_data.options_map.end())
@@ -218,8 +218,8 @@ int main(int argc, char *argv[])
     thread_pool.wait(); //wait for all thread complete
     #endif
 
-    statics_dicts_t merged_statics;
-    statics_denominator_table_t merged_denominator_table(range);
+    platypus_statics_dicts_t merged_statics;
+    platypus_denominator_table_t merged_denominator_table(range);
 
     for (auto &local_statics : thread_statics)
     {

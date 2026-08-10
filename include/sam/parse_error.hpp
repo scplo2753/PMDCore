@@ -1,0 +1,10 @@
+#pragma once
+
+enum class ParseError
+{
+    NONE,
+    BAD_RECORD_HAVE_EMPTY_FIELD,
+    BAD_RECORD_ILLEGAL_FLAG,
+    BAD_RECORD_ILLEGAL_POS,
+    BAD_RECORD_ILLEGAL_MAPQ
+};

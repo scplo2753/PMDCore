@@ -2,25 +2,26 @@
 #include "calPMD.hpp"
 #include "arguments.hpp"
 #include <algorithm>
+#include "pmd/likelihood.hpp"
 
 /***
  * @details The constructor takes in a real_data_t object containing the real read and reference sequence,
- *          vectors for modern and ancient deamination models, quality scores, a masked sequence, and a statics_dicts_t object for managing mismatch dictionaries.
+ *          vectors for modern and ancient deamination models, quality scores, a masked sequence, and a platypus_statics_dicts_t object for managing mismatch dictionaries.
  *          It initializes the member variables and calls the calPMD_loop() function to perform the PMD calculation.
  */
-calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq_input, statics_dicts_t &statics_dict, statics_denominator_table_t &denominator_table) : real_read(std::move(real_data.real_read)),
-                                                                                                                                                                                                                                  real_ref_seq(std::move(real_data.real_ref_seq)),
-                                                                                                                                                                                                                                  quals(quals),
-                                                                                                                                                                                                                                  temp_quals(quals),
-                                                                                                                                                                                                                                  ancient_model_deam(ancient_model_deam),
-                                                                                                                                                                                                                                  modern_model_deam(modern_model_deam),
-                                                                                                                                                                                                                                  mismatch_dict(statics_dict.mismatch_dict),
-                                                                                                                                                                                                                                  mismatch_dict_CpG(statics_dict.mismatch_dict_CpG),
-                                                                                                                                                                                                                                  mismatch_dict_rev(statics_dict.mismatch_dict_rev),
-                                                                                                                                                                                                                                  mismatch_dict_CpG_rev(statics_dict.mismatch_dict_CpG_rev),
-                                                                                                                                                                                                                                  maskedseq(maskedseq_input),
-                                                                                                                                                                                                                                  statics_dict(statics_dict),
-                                                                                                                                                                                                                                  statics_denominator_table(denominator_table)
+calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq_input, platypus_statics_dicts_t &platypus_statics_dict, platypus_denominator_table_t &platypus_denominator_table) : real_read(std::move(real_data.real_read)),
+                                                                                                                                                                                                                                                                                                                              real_ref_seq(std::move(real_data.real_ref_seq)),
+                                                                                                                                                                                                                                                                                                                              quals(quals),
+                                                                                                                                                                                                                                                                                                                              temp_quals(quals),
+                                                                                                                                                                                                                                                                                                                              ancient_model_deam(ancient_model_deam),
+                                                                                                                                                                                                                                                                                                                              modern_model_deam(modern_model_deam),
+                                                                                                                                                                                                                                                                                                                              mismatch_dict(platypus_statics_dict.mismatch_dict),
+                                                                                                                                                                                                                                                                                                                              mismatch_dict_CpG(platypus_statics_dict.mismatch_dict_CpG),
+                                                                                                                                                                                                                                                                                                                              mismatch_dict_rev(platypus_statics_dict.mismatch_dict_rev),
+                                                                                                                                                                                                                                                                                                                              mismatch_dict_CpG_rev(platypus_statics_dict.mismatch_dict_CpG_rev),
+                                                                                                                                                                                                                                                                                                                              maskedseq(maskedseq_input),
+                                                                                                                                                                                                                                                                                                                              platypus_statics_dict(platypus_statics_dict),
+                                                                                                                                                                                                                                                                                                                              platypus_denominator_table(platypus_denominator_table)
 {
     assert(quals.size() >= real_read.size());
     const bool masking_enabled =
@@ -102,10 +103,10 @@ void calPMD::calPMD_loop()
 
         if (FLAGS_platypus)
         {
-            if(start_distance<FLAGS_range)
+            if (start_distance < FLAGS_range)
                 platypus_forward(start_distance, real_ref_seq[site], real_read[site]);
             if (backStart_distance < FLAGS_range)
-                platypus_backward(start_distance,backStart_distance, real_ref_seq[site], real_read[site]);
+                platypus_backward(start_distance, backStart_distance, real_ref_seq[site], real_read[site]);
         }
         ///@todo implement options.deamination
 
@@ -129,17 +130,17 @@ void calPMD::platypus_forward(size_t start_distance, const char &real_ref_seq_po
         }
     }
 
-    //count 5' end
+    // count 5' end
     the_key.push_back(real_ref_seq_pos);
     the_key.push_back(real_read_pos);
     the_key += std::to_string(start_distance);
 
     {
-        std::lock_guard<std::mutex> lock(statics_dict.dict_mutex); // only lock when modifying the dictionary
+        std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex); // only lock when modifying the dictionary
         if (CpGcheck == true)
         {
             ++mismatch_dict_CpG[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.forward_CpG);
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.forward_CpG);
             if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
             {
                 nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
@@ -148,7 +149,7 @@ void calPMD::platypus_forward(size_t start_distance, const char &real_ref_seq_po
         else
         {
             ++mismatch_dict[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.forward);
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.forward);
             if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
             {
                 nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
@@ -157,7 +158,7 @@ void calPMD::platypus_forward(size_t start_distance, const char &real_ref_seq_po
     }
 }
 
-void calPMD::platypus_backward(size_t start_distance,size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos)
+void calPMD::platypus_backward(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos)
 {
     std::string the_key = "";
     bool CpGcheck = false;
@@ -172,13 +173,13 @@ void calPMD::platypus_backward(size_t start_distance,size_t backStart_distance, 
     the_key.push_back(real_read_pos);
     the_key += std::to_string(backStart_distance);
 
-    //set lock only when modifying the dictionary
+    // set lock only when modifying the dictionary
     {
-        std::lock_guard<std::mutex> lock(statics_dict.dict_mutex);
+        std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex);
         if (CpGcheck == true)
         {
             ++mismatch_dict_CpG_rev[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.reverse_CpG);
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.reverse_CpG);
             if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
             {
                 nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
@@ -187,7 +188,7 @@ void calPMD::platypus_backward(size_t start_distance,size_t backStart_distance, 
         else
         {
             ++mismatch_dict_rev[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.reverse);
+            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.reverse);
             if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
             {
                 nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
@@ -208,32 +209,32 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
         }
     }
 
-    //count 5' end
+    // count 5' end
     the_key.push_back(real_ref_seq_pos);
     the_key.push_back(real_read_pos);
     the_key += std::to_string(start_distance);
-    
+
     {
-        std::lock_guard<std::mutex> lock(statics_dict.dict_mutex); // only lock when modifying the dictionary
-        if(static_cast<size_t>(start_distance) < FLAGS_range)
-        if (CpGcheck == true)
-        {
-            ++mismatch_dict_CpG[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.forward_CpG);
-            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
+        std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex); // only lock when modifying the dictionary
+        if (static_cast<size_t>(start_distance) < FLAGS_range)
+            if (CpGcheck == true)
             {
-                nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
+                ++mismatch_dict_CpG[the_key];
+                std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.forward_CpG);
+                if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
+                {
+                    nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
+                }
             }
-        }
-        else
-        {
-            ++mismatch_dict[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.forward);
-            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
+            else
             {
-                nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
+                ++mismatch_dict[the_key];
+                std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.forward);
+                if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(start_distance) < nucleo_total_table_vector_ptr->size())
+                {
+                    nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
+                }
             }
-        }
     }
     //=================================end========================================
 
@@ -251,28 +252,28 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
     the_key.push_back(real_read_pos);
     the_key += std::to_string(backStart_distance);
 
-    //set lock only when modifying the dictionary
+    // set lock only when modifying the dictionary
     {
-        std::lock_guard<std::mutex> lock(statics_dict.dict_mutex);
-        if(static_cast<size_t>(backStart_distance) < FLAGS_range)
-        if (CpGcheck == true)
-        {
-            ++mismatch_dict_CpG_rev[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.reverse_CpG);
-            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
+        std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex);
+        if (static_cast<size_t>(backStart_distance) < FLAGS_range)
+            if (CpGcheck == true)
             {
-                nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
+                ++mismatch_dict_CpG_rev[the_key];
+                std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.reverse_CpG);
+                if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
+                {
+                    nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
+                }
             }
-        }
-        else
-        {
-            ++mismatch_dict_rev[the_key];
-            std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, statics_denominator_table.reverse);
-            if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
+            else
             {
-                nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
+                ++mismatch_dict_rev[the_key];
+                std::vector<double> *nucleo_total_table_vector_ptr = choose_nucleo_total_table_vector(real_ref_seq_pos, platypus_denominator_table.reverse);
+                if (nucleo_total_table_vector_ptr != nullptr && static_cast<size_t>(backStart_distance) < nucleo_total_table_vector_ptr->size())
+                {
+                    nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
+                }
             }
-        }
     }
 }
 
@@ -363,7 +364,6 @@ int calPMD::computeDegradationScore(size_t start_distance, size_t backStart_dist
             L_MD.L_M = L_MD.L_M * L_match(backStart_distance, modern_model_deam, qualsRev, FLAGS_polymorphism_contamination);
         }
     }
-
 
     return 0;
 }

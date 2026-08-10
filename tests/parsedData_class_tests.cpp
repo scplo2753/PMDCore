@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "utility.hpp"
+#include "utilities/sequence_utils.hpp"
 #include "seqProcedures.hpp"
 #include "parsedData.hpp"
 #include "arguments.hpp"
@@ -37,12 +37,12 @@ TEST(ParsedDataClassTest,tag_functions_test){
 
 TEST(ParsedDataClassTest,test_of_isStatusFlagSet_with_false)
 {
-    EXPECT_FALSE(standardRecord.isStatusFlagSet(0x4));
+    EXPECT_FALSE(standardRecord.isStatusFlagSet(SamFlag::READ_UNMAPPED));
 }
 
 TEST(ParsedDataClassTest,test_of_isStatusFlagset_with_true)
 {
-    EXPECT_TRUE(flagTestData.isStatusFlagSet(0x4));
+    EXPECT_TRUE(flagTestData.isStatusFlagSet(SamFlag::READ_UNMAPPED));
 }
 
 TEST(ParsedDataClassTest, status_FLAG_functions_test_FALSE){

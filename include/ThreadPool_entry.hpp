@@ -1,15 +1,22 @@
+#pragma once
 #include <cassert>
+#include <iostream>
+#include <mutex>
 #include <stdexcept>
-#include "utility.hpp"
+#include <string>
+#include <vector>
 #include "arguments.hpp"
 #include "parsedData.hpp"
 #include "calPMD.hpp"
+#include "alignment/alignment.hpp"
+#include "sam/struct_record.hpp"
+#include "statistics/statistics_types.hpp"
 
 inline std::mutex output_mutex;
 inline constexpr size_t OUTPUT_BUFFER_FLUSH_SIZE = 1 << 20;
 
-inline thread_local statics_dicts_t *tls_statics_dict = nullptr;
-inline thread_local statics_denominator_table_t *tls_denominator_table = nullptr;
+inline thread_local platypus_statics_dicts_t *tls_statics_dict = nullptr;
+inline thread_local platypus_denominator_table_t *tls_platypus_denominator_table = nullptr;
 
 // 数据处理结构体
 struct WorkItem

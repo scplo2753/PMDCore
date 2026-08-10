@@ -9,7 +9,7 @@
  *          vectors for modern and ancient deamination models, quality scores, a masked sequence, and a platypus_statics_dicts_t object for managing mismatch dictionaries.
  *          It initializes the member variables and calls the calPMD_loop() function to perform the PMD calculation.
  */
-calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq_input, platypus_statics_dicts_t &platypus_statics_dict, platypus_denominator_table_t &platypus_denominator_table) : real_read(std::move(real_data.real_read)),
+calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_deam, const std::vector<double> &ancient_model_deam, std::string_view quals, const std::string &maskedseq_input, platypus_statics_dicts_t &platypus_statics_dict, platypus_denominator_table_t &platypus_denominator_table, deamination_statics_t &deam_statics_table) : real_read(std::move(real_data.real_read)),
                                                                                                                                                                                                                                                                                                                               real_ref_seq(std::move(real_data.real_ref_seq)),
                                                                                                                                                                                                                                                                                                                               quals(quals),
                                                                                                                                                                                                                                                                                                                               temp_quals(quals),
@@ -21,7 +21,8 @@ calPMD::calPMD(real_data_t &&real_data, const std::vector<double> &modern_model_
                                                                                                                                                                                                                                                                                                                               mismatch_dict_CpG_rev(platypus_statics_dict.mismatch_dict_CpG_rev),
                                                                                                                                                                                                                                                                                                                               maskedseq(maskedseq_input),
                                                                                                                                                                                                                                                                                                                               platypus_statics_dict(platypus_statics_dict),
-                                                                                                                                                                                                                                                                                                                              platypus_denominator_table(platypus_denominator_table)
+                                                                                                                                                                                                                                                                                                                              platypus_denominator_table(platypus_denominator_table),
+                                                                                                                                                                                                                                                                                                                              deam_statics_table(deam_statics_table)
 {
     assert(quals.size() >= real_read.size());
     const bool masking_enabled =
@@ -82,8 +83,16 @@ void calPMD::calPMD_loop()
 {
     // a=real_read_pos
     // b=real_ref_seq_pos
-    std::string qualsRev(quals.data(), quals.size());
-    std::reverse(qualsRev.begin(), qualsRev.end());
+
+    std::string qualsRev;
+
+    // Deamination mode always continues or breaks before likelihood scoring,
+    // so qualsRev is only needed when deamination mode is disabled.
+    if (!FLAGS_deamination)
+    {
+        qualsRev.assign(quals.data(), quals.size());
+        std::reverse(qualsRev.begin(), qualsRev.end());
+    }
 
     for (size_t site = 0; site < real_read_length; ++site)
     {
@@ -108,8 +117,17 @@ void calPMD::calPMD_loop()
             if (backStart_distance < FLAGS_range)
                 platypus_backward(start_distance, backStart_distance, real_ref_seq[site], real_read[site]);
         }
-        ///@todo implement options.deamination
+        if (FLAGS_deamination)
+        {
+            const bool should_continue = calPMD::deamination(start_distance, backStart_distance, real_ref_seq[site], real_read[site]);
 
+            if (should_continue == false)
+                break;
+
+            continue;
+        }
+
+        ///@note would be disabled by enable deamination param
         const int result = computeDegradationScore(start_distance, backStart_distance, real_ref_seq[site], real_read[site], qualsRev);
         if (result == -1)
             continue;
@@ -378,6 +396,70 @@ bool calPMD::threshold_filter()
 }
 
 /**
+ * @brief Records a C- or G-reference observation for deamination statistics.
+ *
+ * Only positions within FLAGS_range of the corresponding read end are
+ * considered. When CpG mode is enabled, the required neighboring-base
+ * context is checked before recording the observation.
+ *
+ * @param start_distance Distance from the 5-prime end.
+ * @param backStart_distance Distance from the 3-prime end.
+ * @param real_ref_seq_pos Reference base at the current position.
+ * @param real_read_pos Observed read base at the current position.
+ * @return true if calPMD_loop should continue to the next position.
+ * @return false if calPMD_loop should stop processing the current read.
+ */
+bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos)
+{
+    if (real_ref_seq_pos == 'C')
+    {
+        if (start_distance >= deam_statics_table.forward.counts.size() || start_distance >= deam_statics_table.forward.totals.size())
+            return true;
+
+        if (FLAGS_CpG)
+        {
+            if (start_distance + 1 >= real_read_length)
+                return false;
+            if (real_read[start_distance + 1] != 'G')
+                return true;
+        }
+        ///@todo options.nocpg
+        ///@todo options.UDGhalf
+
+        {
+            const size_t base_index = forward_index(real_read_pos);
+            if (base_index == 4)
+                return true; // Skip unsupported or ambiguous read bases.
+            deam_statics_table.forward.counts[start_distance][base_index] += 1;
+            deam_statics_table.forward.totals[start_distance] += 1;
+        }
+    }
+    else if (real_ref_seq_pos == 'G')
+    {
+        if (backStart_distance >= deam_statics_table.reverse.counts.size() || backStart_distance >= deam_statics_table.reverse.totals.size())
+            return true;
+
+        if (FLAGS_CpG)
+        {
+            if (start_distance == 0)
+                return true;
+            if (real_ref_seq[start_distance - 1] != 'C')
+                return true;
+        }
+        ///@todo options.nocpg
+        ///@todo options.UDGhalf
+        {
+            size_t base_index = reverse_index(real_read_pos);
+            if (base_index == 4)
+                return true; // Skip unsupported or ambiguous read bases.
+            deam_statics_table.reverse.counts[backStart_distance][base_index] += 1;
+            deam_statics_table.reverse.totals[backStart_distance] += 1;
+        }
+    }
+    return true;
+}
+
+/**
  * @brief This function initializes the masked sequence based on the provided start and back start distances, as well as the reverse context flag.
  *        It modifies the masked sequence by replacing bases with 'N' at specified positions if certain conditions are met,
  *        such as being within the threshold for masking terminal deaminations.
@@ -397,14 +479,14 @@ void calPMD::function_maskterminaldeam_init_maskedseq(size_t start_distance, siz
                              (backstart_distance <= FLAGS_maskterminaldeaminations &&
                               (FLAGS_ss || is_reverse_context));
 
-    if(!should_mask)
+    if (!should_mask)
         return;
 
     assert(start_distance < maskedseq.size());
     maskedseq[start_distance] = 'N';
 }
 
-std::vector<double>* calPMD::choose_nucleo_total_table_vector(const char &base,statics_nucleo_total_table_t &nucleo_total_table)
+std::vector<double> *calPMD::choose_nucleo_total_table_vector(const char &base, statics_nucleo_total_table_t &nucleo_total_table)
 {
     switch (base)
     {

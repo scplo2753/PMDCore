@@ -35,7 +35,7 @@ void process_single_line(
     const std::vector<std::string> &split_record,
     bool is_reverse)
 {
-    if(tls_statics_dict == nullptr || tls_platypus_denominator_table == nullptr)
+    if (tls_statics_dict == nullptr || tls_platypus_denominator_table == nullptr || tls_deamination_statics_table == nullptr)
     {
         throw std::runtime_error("Thread-local platypus_statics_dict or denominator_table is not initialized.");
     }
@@ -49,7 +49,8 @@ void process_single_line(
             work_item.parsed_data.getQualityScores(),
             maskedseq,
             *tls_statics_dict,
-            *tls_platypus_denominator_table);
+            *tls_platypus_denominator_table,
+            *tls_deamination_statics_table);
 
         maskedseq = calPMD_instance.get_maskedSeq();
 

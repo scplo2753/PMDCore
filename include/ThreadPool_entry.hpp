@@ -17,6 +17,7 @@ inline constexpr size_t OUTPUT_BUFFER_FLUSH_SIZE = 1 << 20;
 
 inline thread_local platypus_statics_dicts_t *tls_statics_dict = nullptr;
 inline thread_local platypus_denominator_table_t *tls_platypus_denominator_table = nullptr;
+inline thread_local deamination_statics_t *tls_deamination_statics_table = nullptr;
 
 // 数据处理结构体
 struct WorkItem

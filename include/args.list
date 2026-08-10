@@ -54,6 +54,7 @@ DEFINE_bool(platypus, false, "output big list of base frequencies for platypus")
 //options of platypus
 DEFINE_bool(ss, false, "single stranded")
 DEFINE_uint32(requirebaseq, 0, "only process bases with base quality at least this great")
+DEFINE_bool(deamination,false,"output base frequencies in the read at positions where there are C or G in the reference")
 
 //output sam header
 DEFINE_bool(header,false,"output the sam header")
@@ -68,7 +69,6 @@ DEFINE_bool(header,false,"output the sam header")
 //DEFINE_uint32(readlength,0,"only process sequences with this read length")
 //DEFINE_uint32(maxlength,300,"only process sequences with max this read length")
 //DEFINE_uint32(minlength,0,"only process sequences with min this read length")
-//DEFINE_bool(deamination,false,"output base frequencies in the read at positions where there are C or G in the reference")
 //--UDGplus a.k.a --CpG
 //DEFINE_bool(PMDSprim,false,"PMDSprim)
 //DEFINE_double(PMDSprimthreshold,0,"only use Cs and Gs in CpG context") ///@note on original source code, this param is float type, but default value is 'False'

@@ -16,6 +16,8 @@
 #include "utilities_wrappers.hpp"
 #include "statics.hpp"
 #include "statistics/statistics_types.hpp"
+#include "statistics/deam_types.hpp"
+#include "deamination_statics.hpp"
 #include "pmd/deamination_model.hpp"
 
 //#define __DEBUG__ ///Enable debug module for compare result with origin program output
@@ -93,12 +95,14 @@ int main(int argc, char *argv[])
     std::vector<platypus_statics_dicts_t> thread_statics(thread_count);
     std::vector<std::string> thread_output_buffers; // removed per-thread external buffers; kept empty for compatibility
     std::vector<platypus_denominator_table_t> platypus_denominator_tables(thread_count, platypus_denominator_table_t(range));
+    std::vector<deamination_statics_t> deamination_statics_tables(thread_count, deamination_statics_t(range));
 
     ThreadPool thread_pool(
         thread_count, [&](size_t index)
         { 
             tls_statics_dict = &thread_statics[index];
             tls_platypus_denominator_table = &platypus_denominator_tables[index];
+            tls_deamination_statics_table = &deamination_statics_tables[index];
             tls_output_buffer.buffer.reserve(OUTPUT_BUFFER_FLUSH_SIZE); 
         });
 
@@ -218,17 +222,7 @@ int main(int argc, char *argv[])
     thread_pool.wait(); //wait for all thread complete
     #endif
 
-    platypus_statics_dicts_t merged_statics;
-    platypus_denominator_table_t merged_denominator_table(range);
 
-    for (auto &local_statics : thread_statics)
-    {
-        merge_statics_dicts(merged_statics, local_statics);
-    }
-    for (auto &local_denominator_table : denominator_tables)
-    {
-        merge_denominator_tables(merged_denominator_table, local_denominator_table);
-    }
 
     /**
      * @todo imple param first
@@ -237,10 +231,34 @@ int main(int argc, char *argv[])
      * @todo imple param basecomposition
      */
 
+    if(FLAGS_deamination)
+    {
+        deamination_statics_t merged_deamination_statistics(range);
+        for (const auto &local_statistics : deamination_statics_tables)
+        {
+            merged_deamination_statistics += local_statistics;
+        }
+
+        print_deamination_statistics(merged_deamination_statistics);
+    }
+
     if (FLAGS_platypus)
     {
+        platypus_statics_dicts_t merged_statics;
+        platypus_denominator_table_t merged_denominator_table(range);
+
+        for (auto &local_statics : thread_statics)
+        {
+            merge_statics_dicts(merged_statics, local_statics);
+        }
+        for (auto &local_denominator_table : platypus_denominator_tables)
+        {
+            merge_denominator_tables(merged_denominator_table, local_denominator_table);
+        }
+
         platypus_result_struct platypus_result;
         platypus_result_struct denominator_result;
+
         init_platypus_result_struct(platypus_result, denominator_result);
         statics(merged_statics, platypus_result, merged_denominator_table);
         print_statics_result(platypus_result);

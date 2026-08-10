@@ -13,6 +13,10 @@ not aim to reproduce every option or behavior of the original PMDtools program.
 The project is mainly developed for learning, validation and implementation
 experiments, including multithreading and modern C++ design.
 
+Known behavioral differences from the original PMDtools implementation and
+questions that still require validation are documented in
+[Open Questions and Compatibility Notes](OPEN_QUESTIONS.md).
+
 ## Build Instructions
 
 ### Distribution dependencies

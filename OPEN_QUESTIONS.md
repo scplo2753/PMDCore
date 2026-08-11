@@ -175,3 +175,85 @@ Related code:
 - `include/statistics/deam_types.hpp`, `deamination_statics_t`
 - `main_multithreaded.cpp`, independent thread-result merging and output
 - `src/arguments.cpp`, simultaneous-option caution
+
+## Reference-dependent checks when an existing DS field skips reconstruction
+
+Status: Open for future DS reuse; current PMDCore behavior is defined below.
+
+In the original `pmdtools.0.60.py`, reconstruction of `real_ref_seq` is
+conditional. A record with an existing `DS:Z:` field can skip reconstruction
+when no option requiring the alignment or a new PMD calculation is enabled:
+
+```python
+if (DSfield == False) or options.writesamfield or (options.basic > 0) or \
+        options.terminal or (options.perc_identity > 0.01) or \
+        options.printalignments or options.adjustss or options.adjustbaseq or \
+        options.adjustbaseq_all or options.deamination or options.dry or \
+        options.estimate or options.first:
+    # Reconstruct real_read and real_ref_seq.
+```
+
+However, the GC-content and reconstructed-reference validity checks are
+executed unconditionally after this block:
+
+```python
+GCcontent = 1.0 * (real_ref_seq.count('G') +
+                   real_ref_seq.count('C')) / readlen
+if GCcontent > options.maxGC: continue
+elif GCcontent < options.minGC: continue
+
+if ('G' not in real_ref_seq and 'C' not in real_ref_seq and
+        'T' not in real_ref_seq and 'A' not in real_ref_seq):
+    continue
+```
+
+Because `real_ref_seq` is assigned only inside the reconstruction block, the
+original program may encounter an undefined variable when the first eligible
+record skips reconstruction. If an earlier record did reconstruct a reference,
+the later record may instead reuse that earlier record's stale `real_ref_seq`
+because Python loop bodies do not introduce a new variable scope.
+
+### Current C++ behavior
+
+PMDCore currently disables reuse of an existing `DS:Z:` value. The input tag
+does not suppress reference reconstruction or PMD calculation. Every record
+that reaches this part of the pipeline must therefore have its reference
+reconstructed from the MD tag, after which the normal GC-content and
+reference-validity checks are applied.
+
+This temporary policy means that:
+
+- records with and without an existing `DS:Z:` tag follow the same
+  reconstruction and calculation path;
+- an existing DS value is not used for threshold filtering;
+- Platypus, deamination, masking, and PMD likelihood calculation are not
+  skipped merely because an input DS tag exists;
+- records still require a usable MD tag even when they already contain a DS
+  value; and
+- PMDCore avoids both reuse of a stale reference and checks against an empty
+  reference sequence.
+
+This behavior intentionally prioritizes consistent processing of currently
+implemented features over the original optimization of reusing a stored PMD
+score.
+
+If DS reuse is implemented in the future, it remains undecided whether such
+records should:
+
+1. skip GC-content and reference-validity checks when reconstruction is not
+   otherwise required;
+2. reconstruct the reference solely to apply those checks; or
+3. follow another explicitly documented compatibility policy.
+
+Until that decision is made, the unconditional-reconstruction policy above is
+the defined PMDCore behavior. The original undefined/stale-variable behavior
+should not be treated as a stable compatibility requirement.
+
+Related code:
+
+- `pmdtools.0.60.py`, conditional reference reconstruction and subsequent
+  GC/reference checks
+- `main_multithreaded.cpp`, disabled DS reuse, unconditional reconstruction,
+  and reference-dependent checks
+- `src/seqProcedures.cpp`, `isGCcontentInRange`
+- `src/Filters.cpp`, `badRefSeq_Vailder`

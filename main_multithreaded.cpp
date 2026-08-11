@@ -176,8 +176,6 @@ int main(int argc, char *argv[])
         if (!badRefSeq_Vailder(alignnmentData.ref_seq, line))
             continue;
         /// @todo imple basecomposition param
-        /// @todo imple basic param
-        /// @todo imple terminal param
         if (IS_USED_basic && FLAGS_basic > 0)
         {
             if (function_basicFilter(alignnmentData.ref_seq, data_ptr.getReadSeq(), data_ptr.getReadSeq().size(), data_ptr.getQualityScores()))

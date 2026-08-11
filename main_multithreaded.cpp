@@ -149,6 +149,9 @@ int main(int argc, char *argv[])
 
         // end
 
+        //Temporarily disable reuse of DS:Z in optional field,
+        //It would skip reference-sequence reconstruction, so the reference sequence var is empty.
+        /**
         double LR=0.0f;
         bool DSfield = false;
         if (raw_data.options_map.find("DS") != raw_data.options_map.end())
@@ -157,15 +160,13 @@ int main(int argc, char *argv[])
             std::string DSvalue = raw_data.options_map.at("DS").value;
             LR = std::stod(DSvalue);
         }
+        */
 
         parsedData data_ptr(raw_data);
         alignnmentData_t alignnmentData;
-        if (DSfield == false || IS_USED_basic && FLAGS_basic > 0 || FLAGS_terminal) // not complete yet
-        {
-            int result = ReconstructAlignmentAndRefSeq(data_ptr, alignnmentData);
-            if (result == -1)
-                continue;
-        }
+        int result = ReconstructAlignmentAndRefSeq(data_ptr, alignnmentData);
+        if (result == -1)
+            continue;
 
         string maskedseq{};
         if (ParamChecks::isUsing_maskTerminalBases()|| ParamChecks::isUsing_maskTerminalDeaminations())

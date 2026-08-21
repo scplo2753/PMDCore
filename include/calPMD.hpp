@@ -1,6 +1,7 @@
 #pragma once
 #include "alignment/alignment.hpp"
 #include "statistics/statistics_types.hpp"
+#include "statistics/deam_types.hpp"
 #include <string>
 #include <string_view>
 #include <map>
@@ -38,6 +39,7 @@ public:
      * @param[in] maskedseq_input A string representing the masked sequence
      * @param[in] platypus_statics_dict A platypus_statics_dicts_t object for managing mismatch dictionaries
      * @param[in,out] platypus_denominator_table Platypus nucleotide totals
+     * @param[in,out] deam_statics_table Deamination counts for the current worker
      * @note The constructor assumes that the input sequences and quality scores are valid and properly formatted.
      */
     calPMD(real_data_t &&real_data, 
@@ -45,7 +47,8 @@ public:
         std::string_view quals, 
         const std::string &maskedseq, 
         platypus_statics_dicts_t &platypus_statics_dict,
-        platypus_denominator_table_t &platypus_denominator_table);
+        platypus_denominator_table_t &platypus_denominator_table,
+        deamination_statics_t &deam_statics_table);
 
     ~calPMD() = default;
 
@@ -81,6 +84,7 @@ private:
     platypus_statics_dicts_t& platypus_statics_dict;  // to read and update mismatch dictionaries
 
     platypus_denominator_table_t &platypus_denominator_table; // to read and update nucleotide totals
+    deamination_statics_t &deam_statics_table;
 
     L_MD_t L_MD;
 
@@ -90,6 +94,9 @@ private:
     void platypus_forward(size_t start_distance, const char &real_ref_seq_pos, const char &real_read_pos);
     void platypus_backward(size_t start_distance,size_t backstart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
     void platypus(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
+
+    bool deamination(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos);
+
     int computeDegradationScore(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev);
     void function_maskterminaldeam_init_maskedseq(size_t start_distance, size_t backstart_distance, bool is_reverse_context);
     std::vector<double>* choose_nucleo_total_table_vector(const char &base,statics_nucleo_total_table_t &denominator_table);

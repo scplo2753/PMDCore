@@ -10,6 +10,7 @@ protected:
         FLAGS_CpG = false;
         FLAGS_ss = false;
         FLAGS_platypus = false;
+        FLAGS_deamination = false;
         FLAGS_range = 30;
         FLAGS_requirebaseq = 0;
         FLAGS_threshold = -20000.0;
@@ -23,7 +24,7 @@ protected:
 
 TEST_F(calPMDTest, threshold_filter_returns_true_for_PerfectMatch)
 {
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"AAAA", "AAAA"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
@@ -31,20 +32,21 @@ TEST_F(calPMDTest, threshold_filter_returns_true_for_PerfectMatch)
     std::string maskedseq = "AAAA";
 
     platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
-    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, platypus_statics_dict, denom, deam_statics);
 
     EXPECT_TRUE(pmd.threshold_filter());
-    EXPECT_TRUE(statics_dict.mismatch_dict.empty());
-    EXPECT_TRUE(statics_dict.mismatch_dict_rev.empty());
-    EXPECT_TRUE(statics_dict.mismatch_dict_CpG.empty());
-    EXPECT_TRUE(statics_dict.mismatch_dict_CpG_rev.empty());
+    EXPECT_TRUE(platypus_statics_dict.mismatch_dict.empty());
+    EXPECT_TRUE(platypus_statics_dict.mismatch_dict_rev.empty());
+    EXPECT_TRUE(platypus_statics_dict.mismatch_dict_CpG.empty());
+    EXPECT_TRUE(platypus_statics_dict.mismatch_dict_CpG_rev.empty());
 }
 
 TEST_F(calPMDTest, platypus_increments_mismatch_dictionaries_for_CT_Mismatch)
 {
     FLAGS_platypus = true;
 
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"TTTT", "CTTT"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
@@ -52,10 +54,11 @@ TEST_F(calPMDTest, platypus_increments_mismatch_dictionaries_for_CT_Mismatch)
     std::string maskedseq = "TTTT";
 
     platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
-    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, platypus_statics_dict, denom, deam_statics);
 
-    EXPECT_EQ(statics_dict.mismatch_dict["CT0"], 1);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev["CT3"], 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict["CT0"], 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev["CT3"], 1);
     EXPECT_TRUE(pmd.threshold_filter());
 }
 
@@ -64,7 +67,7 @@ TEST_F(calPMDTest, PlatypusOnlyCountsSitesWithinConfiguredRange)
     FLAGS_platypus = true;
     FLAGS_range = 2;
 
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"AAAAAA", "AAAAAA"};
 
     std::vector<double> modern_model_deam(6, 0.01);
@@ -75,6 +78,7 @@ TEST_F(calPMDTest, PlatypusOnlyCountsSitesWithinConfiguredRange)
 
     platypus_denominator_table_t denom(
         static_cast<size_t>(FLAGS_range));
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
 
     calPMD pmd(
         std::move(real_data),
@@ -82,32 +86,33 @@ TEST_F(calPMDTest, PlatypusOnlyCountsSitesWithinConfiguredRange)
         ancient_model_deam,
         quals,
         maskedseq,
-        statics_dict,
-        denom);
+        platypus_statics_dict,
+        denom,
+        deam_statics);
 
     // 5′端只统计距离0和1。
-    ASSERT_EQ(statics_dict.mismatch_dict.size(), 2);
-    EXPECT_EQ(statics_dict.mismatch_dict.at("AA0"), 1);
-    EXPECT_EQ(statics_dict.mismatch_dict.at("AA1"), 1);
+    ASSERT_EQ(platypus_statics_dict.mismatch_dict.size(), 2);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.at("AA0"), 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.at("AA1"), 1);
 
-    EXPECT_EQ(statics_dict.mismatch_dict.count("AA2"), 0);
-    EXPECT_EQ(statics_dict.mismatch_dict.count("AA3"), 0);
-    EXPECT_EQ(statics_dict.mismatch_dict.count("AA4"), 0);
-    EXPECT_EQ(statics_dict.mismatch_dict.count("AA5"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.count("AA2"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.count("AA3"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.count("AA4"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.count("AA5"), 0);
 
     // 3′端同样只统计距离0和1。
-    ASSERT_EQ(statics_dict.mismatch_dict_rev.size(), 2);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.at("AA0"), 1);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.at("AA1"), 1);
+    ASSERT_EQ(platypus_statics_dict.mismatch_dict_rev.size(), 2);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.at("AA0"), 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.at("AA1"), 1);
 
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.count("AA2"), 0);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.count("AA3"), 0);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.count("AA4"), 0);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.count("AA5"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.count("AA2"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.count("AA3"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.count("AA4"), 0);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.count("AA5"), 0);
 
     // 非CpG输入不应写入CpG字典。
-    EXPECT_TRUE(statics_dict.mismatch_dict_CpG.empty());
-    EXPECT_TRUE(statics_dict.mismatch_dict_CpG_rev.empty());
+    EXPECT_TRUE(platypus_statics_dict.mismatch_dict_CpG.empty());
+    EXPECT_TRUE(platypus_statics_dict.mismatch_dict_CpG_rev.empty());
 
     // denominator与字典计数一致。
     ASSERT_EQ(denom.forward.A.size(), 2);
@@ -124,7 +129,7 @@ TEST_F(calPMDTest, PlatypusCountsBothDirectionsWhenTerminalRangesOverlap)
     FLAGS_platypus = true;
     FLAGS_range = 2;
 
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"AAA", "AAA"};
     std::vector<double> modern_model_deam(3, 0.01);
     std::vector<double> ancient_model_deam(3, 0.01);
@@ -133,6 +138,7 @@ TEST_F(calPMDTest, PlatypusCountsBothDirectionsWhenTerminalRangesOverlap)
 
     platypus_denominator_table_t denom(
         static_cast<size_t>(FLAGS_range));
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
 
     calPMD pmd(
         std::move(real_data),
@@ -140,26 +146,27 @@ TEST_F(calPMDTest, PlatypusCountsBothDirectionsWhenTerminalRangesOverlap)
         ancient_model_deam,
         quals,
         maskedseq,
-        statics_dict,
-        denom);
+        platypus_statics_dict,
+        denom,
+        deam_statics);
 
     // 正向统计位置0和1。
-    EXPECT_EQ(statics_dict.mismatch_dict.at("AA0"), 1);
-    EXPECT_EQ(statics_dict.mismatch_dict.at("AA1"), 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.at("AA0"), 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.at("AA1"), 1);
 
     // 反向统计位置1和2。
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.at("AA0"), 1);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.at("AA1"), 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.at("AA0"), 1);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.at("AA1"), 1);
 
-    EXPECT_EQ(statics_dict.mismatch_dict.size(), 2);
-    EXPECT_EQ(statics_dict.mismatch_dict_rev.size(), 2);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict.size(), 2);
+    EXPECT_EQ(platypus_statics_dict.mismatch_dict_rev.size(), 2);
 }
 
 TEST_F(calPMDTest, PlatypusCountsReverseCpGAtReadEnd)
 {
     FLAGS_platypus = true;
 
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"AACA", "AACG"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
@@ -168,6 +175,7 @@ TEST_F(calPMDTest, PlatypusCountsReverseCpGAtReadEnd)
 
     platypus_denominator_table_t denom(
         static_cast<size_t>(FLAGS_range));
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
 
     calPMD pmd(
         std::move(real_data),
@@ -175,15 +183,16 @@ TEST_F(calPMDTest, PlatypusCountsReverseCpGAtReadEnd)
         ancient_model_deam,
         quals,
         maskedseq,
-        statics_dict,
-        denom);
+        platypus_statics_dict,
+        denom,
+        deam_statics);
 
     EXPECT_EQ(
-        statics_dict.mismatch_dict_CpG_rev["GA0"],
+        platypus_statics_dict.mismatch_dict_CpG_rev["GA0"],
         1);
 
     EXPECT_EQ(
-        statics_dict.mismatch_dict_rev.count("GA0"),
+        platypus_statics_dict.mismatch_dict_rev.count("GA0"),
         0);
 }
 
@@ -192,7 +201,7 @@ TEST_F(calPMDTest, ThresholdFilterRespectsConfiguredBounds)
     FLAGS_threshold = 1.0;
     FLAGS_upperthreshold = 2.0;
 
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"AAAA", "AAAA"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
@@ -200,14 +209,15 @@ TEST_F(calPMDTest, ThresholdFilterRespectsConfiguredBounds)
     std::string maskedseq = "AAAA";
 
     platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
-    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, platypus_statics_dict, denom, deam_statics);
 
     EXPECT_FALSE(pmd.threshold_filter());
 }
 
 TEST_F(calPMDTest, EmptyMaskedSequenceIsAllowedWhenMaskingIsDisabled)
 {
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"AAAA", "AAAA"};
     std::vector<double> modern_model_deam(4, 0.01);
     std::vector<double> ancient_model_deam(4, 0.01);
@@ -215,7 +225,8 @@ TEST_F(calPMDTest, EmptyMaskedSequenceIsAllowedWhenMaskingIsDisabled)
     std::string maskedseq;
 
     platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
-    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom);
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
+    calPMD pmd(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, platypus_statics_dict, denom, deam_statics);
 
     EXPECT_TRUE(pmd.get_maskedSeq().empty());
 }
@@ -224,7 +235,7 @@ TEST_F(calPMDTest, CpGCheckHandlesReferenceShorterThanRead)
 {
     FLAGS_CpG = true;
 
-    platypus_statics_dicts_t statics_dict{};
+    platypus_statics_dicts_t platypus_statics_dict{};
     real_data_t real_data{"TT", "C"};
     std::vector<double> modern_model_deam(2, 0.01);
     std::vector<double> ancient_model_deam(2, 0.01);
@@ -232,5 +243,6 @@ TEST_F(calPMDTest, CpGCheckHandlesReferenceShorterThanRead)
     std::string maskedseq;
 
     platypus_denominator_table_t denom(static_cast<size_t>(FLAGS_range));
-    EXPECT_NO_THROW(calPMD(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, statics_dict, denom));
+    deamination_statics_t deam_statics(static_cast<size_t>(FLAGS_range));
+    EXPECT_NO_THROW(calPMD(std::move(real_data), modern_model_deam, ancient_model_deam, quals, maskedseq, platypus_statics_dict, denom, deam_statics));
 }

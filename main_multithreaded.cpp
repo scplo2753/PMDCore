@@ -23,51 +23,6 @@
 //#define __DEBUG__ ///Enable debug module for compare result with origin program output
 //#define __VERBOSE__
 
-static void merge_match_dicts(match_dict_t &dst, const match_dict_t &src)
-{
-    for (const auto &entry : src)
-    {
-        dst[entry.first] += entry.second;
-    }
-}
-
-static void merge_statics_dicts(platypus_statics_dicts_t &dst, const platypus_statics_dicts_t &src)
-{
-    merge_match_dicts(dst.match_dict, src.match_dict);
-    merge_match_dicts(dst.match_dict_CpG, src.match_dict_CpG);
-    merge_match_dicts(dst.match_dict_rev, src.match_dict_rev);
-    merge_match_dicts(dst.match_dict_CpG_rev, src.match_dict_CpG_rev);
-    merge_match_dicts(dst.mismatch_dict, src.mismatch_dict);
-    merge_match_dicts(dst.mismatch_dict_CpG, src.mismatch_dict_CpG);
-    merge_match_dicts(dst.mismatch_dict_rev, src.mismatch_dict_rev);
-    merge_match_dicts(dst.mismatch_dict_CpG_rev, src.mismatch_dict_CpG_rev);
-}
-
-static void merge_denominator_tables(platypus_denominator_table_t &dst, const platypus_denominator_table_t &src)
-{
-    for (size_t i = 0; i < FLAGS_range; ++i)
-    {
-        dst.forward.C[i] += src.forward.C[i];
-        dst.forward.A[i] += src.forward.A[i];
-        dst.forward.G[i] += src.forward.G[i];
-        dst.forward.T[i] += src.forward.T[i];
-
-        dst.reverse.C[i] += src.reverse.C[i];
-        dst.reverse.A[i] += src.reverse.A[i];
-        dst.reverse.G[i] += src.reverse.G[i];
-        dst.reverse.T[i] += src.reverse.T[i];
-
-        dst.forward_CpG.C[i] += src.forward_CpG.C[i];
-        dst.forward_CpG.A[i] += src.forward_CpG.A[i];
-        dst.forward_CpG.G[i] += src.forward_CpG.G[i];
-        dst.forward_CpG.T[i] += src.forward_CpG.T[i];
-
-        dst.reverse_CpG.C[i] += src.reverse_CpG.C[i];
-        dst.reverse_CpG.A[i] += src.reverse_CpG.A[i];
-        dst.reverse_CpG.G[i] += src.reverse_CpG.G[i];
-        dst.reverse_CpG.T[i] += src.reverse_CpG.T[i];
-    }
-}
 
 int main(int argc, char *argv[])
 {
@@ -246,13 +201,13 @@ int main(int argc, char *argv[])
         platypus_statics_dicts_t merged_statics;
         platypus_denominator_table_t merged_denominator_table(range);
 
-        for (auto &local_statics : thread_statics)
+        for (const auto &local_statics : thread_statics)
         {
-            merge_statics_dicts(merged_statics, local_statics);
+            merged_statics += local_statics;
         }
-        for (auto &local_denominator_table : platypus_denominator_tables)
+        for (const auto &local_denominator_table : platypus_denominator_tables)
         {
-            merge_denominator_tables(merged_denominator_table, local_denominator_table);
+            merged_denominator_table += local_denominator_table;
         }
 
         platypus_result_struct platypus_result;

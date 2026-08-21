@@ -2,8 +2,14 @@
 
 An experimental C++ implementation of the core PMD analysis workflow for ancient DNA.
 
-This project started as a personal attempt to understand and reimplement the
-PMD scoring method described in the PMDtools publication.
+This is an experimental reimplementation and is not yet intended as a drop-in replacement for every PMDtools workflow.
+
+PMDCore is a C++ reimplementation of the core PMDtools workflow, developed to investigate reproducibility,
+performance, and compatibility with modern alignment data.
+
+Output has been compared against the original implementation in 4 validation tests using `--platypus` and `--requirebaseq 30`.
+Unit tests cover MD/CIGAR parsing and PMD likelihood calculations.
+In an internal benchmark, the same workload decreased from approximately 4 days to 3-5 minutes.
 
 The underlying method is based on published research, while this particular
 implementation should still be considered experimental. It implements the
@@ -79,6 +85,32 @@ with C++20 support are required.
    ```bash
    ./build/PMDCore --help
    ```
+
+## Acknowledgements
+PMDCore is based on the algorithms and methodology introduced by the original PMDtools project.
+I would like to acknowledge the authors and contributors of PMDtools for making their implementation and research publicly available,
+which made this reimplementation and validation work possible.
+
+The project also relies on several open-source libraries and tools. Their respective authors and maintainers are acknowledged through the project documentation and license notices.
+
+## AI-assisted development
+Generative AI tools, including ChatGPT and the Visual Studio Code Codex extension,
+were used during the development of PMDCore as development assistants.
+
+Their use included:
+
+* discussing and evaluating implementation approaches;
+* reviewing code and identifying potential implementation issues;
+* assisting with the initial design of the thread-pool implementation;
+* discussing performance optimization and software architecture;
+* assisting with documentation and README drafting and revision.
+
+AI-generated suggestions were not treated as authoritative. Design decisions, generated or suggested code, algorithmic behavior,
+and performance-related changes were reviewed, integrated, tested, and validated by the maintainer.
+
+The scientific algorithms and expected behavior of PMDCore are derived from the original PMDtools implementation and its associated publications rather than from generative AI output.
+
+This README was also prepared with AI assistance and subsequently reviewed and edited by the maintainer.
 
 ## Cite
 

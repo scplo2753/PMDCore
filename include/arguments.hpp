@@ -46,7 +46,7 @@ void initCMDParse(int argc, char *argv[]);
 // need for implement
 void function_basecomposition(parsedData &data, alignnmentData_t &real_alignmentData);
 
-bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, uint read_len, std::string_view qual_seq);
+bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, std::size_t read_len, std::string_view qual_seq);
 
 bool function_basicTerminal(std::string_view real_read, std::string_view real_ref_seq, std::string_view qual_seq);
 

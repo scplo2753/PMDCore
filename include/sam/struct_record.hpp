@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <cstdint>
 #include <unordered_map>
 #include "option_field.hpp"
 
@@ -13,8 +14,8 @@ struct recordLine_struct_t
     std::string QNAME;
     std::string FLAG;
     std::string RNAME;
-    uint POS;
-    uint MAPQ;
+    std::uint32_t POS;
+    std::uint16_t MAPQ;
     std::string cigar;
     std::string read_seq;
     std::string quality_scores;

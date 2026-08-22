@@ -337,6 +337,14 @@ int calPMD::computeDegradationScore(size_t start_distance, size_t backStart_dist
             if (real_ref_seq.at(start_distance + 1) != 'G')
                 return -1;
         }
+        else if (FLAGS_noCpG)
+        {
+            if (start_distance + 1 >= real_read.size() ||
+                start_distance + 1 >= real_ref_seq.size())
+                return -2;
+            if (real_ref_seq.at(start_distance + 1) == 'G')
+                return -1;
+        }
         ///@todo implement else if UDGhalf
         ///@todo implement else if EcoliCpG
         ///@todo implement else if Ecoli
@@ -374,6 +382,13 @@ int calPMD::computeDegradationScore(size_t start_distance, size_t backStart_dist
             if (start_distance == 0)
                 return -1;
             if (real_ref_seq[start_distance - 1] != 'C')
+                return -1;
+        }
+        else if(FLAGS_noCpG)
+        {
+            if (start_distance == 0)
+                return -1;
+            if (real_ref_seq[start_distance - 1] == 'C')
                 return -1;
         }
         // if options.UDGhalf
@@ -432,7 +447,13 @@ bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const
             if (real_read[start_distance + 1] != 'G')
                 return true;
         }
-        ///@todo options.nocpg
+        else if(FLAGS_noCpG)
+        {
+            if (start_distance + 1 >= real_read_length)
+                return false;
+            if (real_read[start_distance + 1] == 'G')
+                return true;
+        }
         ///@todo options.UDGhalf
 
         {
@@ -455,7 +476,14 @@ bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const
             if (real_ref_seq[start_distance - 1] != 'C')
                 return true;
         }
-        ///@todo options.nocpg
+        else if(FLAGS_noCpG)
+        {
+            if (start_distance == 0)
+                return true;
+            if (real_ref_seq[start_distance - 1] == 'C')
+                return true;
+        }
+
         ///@todo options.UDGhalf
         {
             size_t base_index = reverse_index(real_read_pos);

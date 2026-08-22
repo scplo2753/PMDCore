@@ -48,6 +48,11 @@ void inputParams_validator()
                      "#simultaneous-use-of---deamination-and---platypus\n"
                   << std::endl;
     }
+
+    if(FLAGS_CpG && FLAGS_noCpG)
+    {
+        throw(std::invalid_argument("Cannot use both --CpG and --noCpG simultaneously"));
+    }
 }
 
 void initCMDParse(int argc, char *argv[])

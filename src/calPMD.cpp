@@ -244,6 +244,7 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
     {
         std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex); // only lock when modifying the dictionary
         if (static_cast<size_t>(start_distance) < FLAGS_range)
+        {
             if (CpGcheck == true)
             {
                 ++mismatch_dict_CpG[the_key];
@@ -262,6 +263,7 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
                     nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
                 }
             }
+        }
     }
     //=================================end========================================
 
@@ -283,6 +285,7 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
     {
         std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex);
         if (static_cast<size_t>(backStart_distance) < FLAGS_range)
+        {
             if (CpGcheck == true)
             {
                 ++mismatch_dict_CpG_rev[the_key];
@@ -301,6 +304,7 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
                     nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
                 }
             }
+        }
     }
 }
 

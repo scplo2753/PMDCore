@@ -17,7 +17,8 @@ set(PMDCORE_TEST_SOURCES
 
 add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES}
     statics_tests.cpp
-    deamination_tests/unit/deamination_counting_test.cpp)
+    deamination_tests/unit/deamination_counting_test.cpp
+    deamination_tests/unit/deamination_CpG_test.cpp)
 
 target_include_directories(PMDCore_tests
     PRIVATE

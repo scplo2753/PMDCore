@@ -125,11 +125,11 @@ TEST(ArgumentsFunctionsTest, BasicFilterHandlesEmptyInputSafely)
 
 TEST(ParsedDataClassTest,test_of_getOpListInCIGAR)
 {
-    std::vector<uint> expected_softclip{0, 5};
-    std::vector<uint> expected_match{0, 1, 2, 8, 9, 10};
-    std::vector<uint> expected_deletion{3};
+    std::vector<std::size_t> expected_softclip{0, 5};
+    std::vector<std::size_t> expected_match{0, 1, 2, 8, 9, 10};
+    std::vector<std::size_t> expected_deletion{3};
 
-    EXPECT_EQ(standardRecord.getInsertionList(), std::vector<uint>{});
+    EXPECT_EQ(standardRecord.getInsertionList(), std::vector<std::size_t>{});
     EXPECT_EQ(standardRecord.getMatchList(), expected_match);
     EXPECT_EQ(standardRecord.getDeletionList(), expected_deletion);
 }

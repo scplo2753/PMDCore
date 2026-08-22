@@ -448,14 +448,14 @@ bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const
         {
             if (start_distance + 1 >= real_read_length)
                 return false;
-            if (real_read[start_distance + 1] != 'G')
+            if (real_ref_seq[start_distance + 1] != 'G')
                 return true;
         }
         else if(FLAGS_noCpG)
         {
             if (start_distance + 1 >= real_read_length)
                 return false;
-            if (real_read[start_distance + 1] == 'G')
+            if (real_ref_seq[start_distance + 1] == 'G')
                 return true;
         }
         ///@todo options.UDGhalf

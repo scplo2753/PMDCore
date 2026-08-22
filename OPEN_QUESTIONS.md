@@ -33,7 +33,7 @@ Related code:
 
 ## Reference or read context for 5-prime CpG deamination
 
-Status: Open
+Status: Resolved — use the reconstructed reference
 
 In the original `pmdtools.0.60.py`, the 5-prime branch of
 `options.deamination` determines CpG context using the observed read:
@@ -54,15 +54,16 @@ Other CpG-sensitive paths, including Platypus statistics and PMD
 likelihood scoring, use the reconstructed reference for context on
 both ends.
 
-It remains undecided whether the 5-prime deamination branch should:
+The C++ implementation intentionally differs from the original script here:
+the 5-prime deamination branch now uses `real_ref_seq[i + 1]`. This makes
+`--CpG` and `--noCpG` classify 5-prime C sites from the reconstructed
+reference, consistently with the 3-prime branch, Platypus statistics, and PMD
+likelihood scoring.
 
-1. preserve the original behavior and use `real_read[i + 1]`;
-2. use `real_ref_seq[i + 1]` for symmetric reference-based CpG
-   classification; or
-3. expose the distinction as an explicit compatibility mode.
-
-The current implementation should preserve the original behavior
-until this question is resolved.
+Consequently, when the read and reconstructed reference disagree at the base
+following a 5-prime C, the reference determines whether that C is in CpG
+context. This is a deliberate behavior change rather than strict compatibility
+with `pmdtools.0.60.py`.
 
 Related code:
 
@@ -70,6 +71,7 @@ Related code:
 - `src/calPMD.cpp`, `calPMD::deamination`
 - `src/calPMD.cpp`, `calPMD::computeDegradationScore`
 - `src/calPMD.cpp`, `calPMD::platypus_forward`
+- `tests/deamination_tests/unit/deamination_CpG_test.cpp`
 
 ## Simultaneous use of `--deamination` and `--platypus`
 

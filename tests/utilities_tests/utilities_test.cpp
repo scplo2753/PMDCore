@@ -16,9 +16,14 @@ TEST(utility,revcomp)
     EXPECT_EQ(result, expect);
 }
 
-TEST(utility,split)
+TEST(utility,splitWithCustomDelimiter)
 {
-    vector<string> result = split(sample_record);
+    EXPECT_EQ(split("A|B|C", '|'), std::vector<std::string>({"A", "B", "C"}));
+}
+
+TEST(utility,splitTable)
+{
+    vector<string> result = splitTable(sample_record);
     vector<string> expect = {"M_E200023363L1C007R00600374775", "0", "1", "1447869", "37", "21M1I10M", "*", "0", "0", "CCGGGCGGCGCGGGCGGGCGGCGCGGCACGGG", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "XT:A:U", "NM:i:3", "X0:i:1", "X1:i:0", "XM:i:2", "XO:i:1", "XG:i:1", "MD:Z:1G23G5", "RG:Z:GXBS2-01"};
     EXPECT_EQ(result, expect);
 }

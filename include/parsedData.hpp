@@ -29,10 +29,10 @@ public:
 
     // CIGAR functions
     std::vector<std::pair<char, std::string>> getCIGARList();
-    std::vector<uint> getInsertionList() { return getOpListInCIGAR('I'); }
-    std::vector<uint> getSoftClipList() { return getOpListInCIGAR('S'); }
-    std::vector<uint> getMatchList() { return getOpListInCIGAR('M'); }
-    std::vector<uint> getDeletionList() { return getOpListInCIGAR('D'); }
+    std::vector<std::size_t> getInsertionList() { return getOpListInCIGAR('I'); }
+    std::vector<std::size_t> getSoftClipList() { return getOpListInCIGAR('S'); }
+    std::vector<std::size_t> getMatchList() { return getOpListInCIGAR('M'); }
+    std::vector<std::size_t> getDeletionList() { return getOpListInCIGAR('D'); }
 
     // MD functions
     std::string getMDTagValue() const { return getTagValue("MD"); }
@@ -63,5 +63,5 @@ private:
     bool flag_isReadReversed;
 
     // functions
-    std::vector<uint> getOpListInCIGAR(char Op);
+    std::vector<std::size_t> getOpListInCIGAR(char Op);
 };

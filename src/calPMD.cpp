@@ -244,6 +244,7 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
     {
         std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex); // only lock when modifying the dictionary
         if (static_cast<size_t>(start_distance) < FLAGS_range)
+        {
             if (CpGcheck == true)
             {
                 ++mismatch_dict_CpG[the_key];
@@ -262,6 +263,7 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
                     nucleo_total_table_vector_ptr->at(start_distance) += 1.0;
                 }
             }
+        }
     }
     //=================================end========================================
 
@@ -283,6 +285,7 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
     {
         std::lock_guard<std::mutex> lock(platypus_statics_dict.dict_mutex);
         if (static_cast<size_t>(backStart_distance) < FLAGS_range)
+        {
             if (CpGcheck == true)
             {
                 ++mismatch_dict_CpG_rev[the_key];
@@ -301,28 +304,10 @@ void calPMD::platypus(size_t start_distance, size_t backStart_distance, const ch
                     nucleo_total_table_vector_ptr->at(backStart_distance) += 1.0;
                 }
             }
+        }
     }
 }
 
-/**
- * @brief Compute the degradation score for a single read position.
- *
- * This function evaluates the current base and reference context, applies PMD
- * model likelihoods, updates the internal damage/match likelihood state, and
- * determines whether the current read position should be skipped or whether the
- * loop should be terminated.
- *
- * @param[in] start_distance Distance from the 5' end of the read.
- * @param[in] backStart_distance Distance from the 3' end of the read.
- * @param[in] real_ref_seq_pos Reference base at the current position.
- * @param[in] real_read_pos Read base at the current position.
- * @param[in,out] qualsRev Reversed quality string used for reverse-strand scoring.
- *
- * @return int
- *         -1 when the current position should be skipped and processing continues.
- *         -2 when processing should stop early.
- *          0 when the position was processed normally.
- */
 int calPMD::computeDegradationScore(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos, std::string &qualsRev)
 {
     if (start_distance >= real_read_length)
@@ -335,6 +320,14 @@ int calPMD::computeDegradationScore(size_t start_distance, size_t backStart_dist
                 start_distance + 1 >= real_ref_seq.size())
                 return -2;
             if (real_ref_seq.at(start_distance + 1) != 'G')
+                return -1;
+        }
+        else if (FLAGS_noCpG)
+        {
+            if (start_distance + 1 >= real_read.size() ||
+                start_distance + 1 >= real_ref_seq.size())
+                return -2;
+            if (real_ref_seq.at(start_distance + 1) == 'G')
                 return -1;
         }
         ///@todo implement else if UDGhalf
@@ -376,6 +369,13 @@ int calPMD::computeDegradationScore(size_t start_distance, size_t backStart_dist
             if (real_ref_seq[start_distance - 1] != 'C')
                 return -1;
         }
+        else if(FLAGS_noCpG)
+        {
+            if (start_distance == 0)
+                return -1;
+            if (real_ref_seq[start_distance - 1] == 'C')
+                return -1;
+        }
         // if options.UDGhalf
         if (real_read_pos == 'A')
         {
@@ -404,20 +404,6 @@ bool calPMD::threshold_filter()
     return false;
 }
 
-/**
- * @brief Records a C- or G-reference observation for deamination statistics.
- *
- * Only positions within FLAGS_range of the corresponding read end are
- * considered. When CpG mode is enabled, the required neighboring-base
- * context is checked before recording the observation.
- *
- * @param start_distance Distance from the 5-prime end.
- * @param backStart_distance Distance from the 3-prime end.
- * @param real_ref_seq_pos Reference base at the current position.
- * @param real_read_pos Observed read base at the current position.
- * @return true if calPMD_loop should continue to the next position.
- * @return false if calPMD_loop should stop processing the current read.
- */
 bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const char &real_ref_seq_pos, const char &real_read_pos)
 {
     if (real_ref_seq_pos == 'C')
@@ -429,10 +415,16 @@ bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const
         {
             if (start_distance + 1 >= real_read_length)
                 return false;
-            if (real_read[start_distance + 1] != 'G')
+            if (real_ref_seq[start_distance + 1] != 'G')
                 return true;
         }
-        ///@todo options.nocpg
+        else if(FLAGS_noCpG)
+        {
+            if (start_distance + 1 >= real_read_length)
+                return false;
+            if (real_ref_seq[start_distance + 1] == 'G')
+                return true;
+        }
         ///@todo options.UDGhalf
 
         {
@@ -455,7 +447,14 @@ bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const
             if (real_ref_seq[start_distance - 1] != 'C')
                 return true;
         }
-        ///@todo options.nocpg
+        else if(FLAGS_noCpG)
+        {
+            if (start_distance == 0)
+                return true;
+            if (real_ref_seq[start_distance - 1] == 'C')
+                return true;
+        }
+
         ///@todo options.UDGhalf
         {
             size_t base_index = reverse_index(real_read_pos);
@@ -468,15 +467,6 @@ bool calPMD::deamination(size_t start_distance, size_t backStart_distance, const
     return true;
 }
 
-/**
- * @brief This function initializes the masked sequence based on the provided start and back start distances, as well as the reverse context flag.
- *        It modifies the masked sequence by replacing bases with 'N' at specified positions if certain conditions are met,
- *        such as being within the threshold for masking terminal deaminations.
- * @param[in] start_distance The distance from the start of the read
- * @param[in] backstart_distance The distance from the end of the read
- * @param[in] is_reverse_context A boolean indicating if the sequence is in reverse orientation
- * @note The function checks the FLAGS_maskterminaldeaminations and FLAGS_ss flags to determine
- */
 void calPMD::function_maskterminaldeam_init_maskedseq(size_t start_distance, size_t backstart_distance, bool is_reverse_context)
 {
     if (!IS_USED_maskterminaldeaminations)

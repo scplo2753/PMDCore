@@ -94,8 +94,8 @@ int ReconstructAlignmentAndRefSeq(parsedData &data, alignnmentData_t &alignnment
         return -1;
     }
     int current_pos = 0;
-    std::vector<uint> insertion_list = data.getInsertionList();
-    std::vector<uint> softclip_list = data.getSoftClipList();
+    const std::vector<std::size_t> insertion_list = data.getInsertionList();
+    const std::vector<std::size_t> softclip_list = data.getSoftClipList();
     const std::string &read = data.getReadSeq();
     for (auto &md : md_list)
     {
@@ -124,7 +124,7 @@ int ReconstructAlignmentAndRefSeq(parsedData &data, alignnmentData_t &alignnment
         int alignment_ptr = 0;
         alignnmentData.ref_seq.clear();
 
-        for (uint x = 0; x < read.length(); x++)
+        for (std::size_t x = 0; x < read.length(); x++)
         {
             bool is_insertion = std::binary_search(insertion_list.begin(), insertion_list.end(), x);
             bool is_softclip = std::binary_search(softclip_list.begin(), softclip_list.end(), x);

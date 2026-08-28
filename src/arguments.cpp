@@ -48,6 +48,11 @@ void inputParams_validator()
                      "#simultaneous-use-of---deamination-and---platypus\n"
                   << std::endl;
     }
+
+    if(FLAGS_CpG && FLAGS_noCpG)
+    {
+        throw(std::invalid_argument("Cannot use both --CpG and --noCpG simultaneously"));
+    }
 }
 
 void initCMDParse(int argc, char *argv[])
@@ -126,7 +131,7 @@ void initCMDParse(int argc, char *argv[])
  */
 void function_basecomposition(parsedData &data, alignnmentData_t &real_alignmentData)
 {
-    uint backoffset = 10;
+    constexpr std::size_t backoffset = 10;
     int endpos, startpos;
     int position = data.getPosition();
     int len_real_read = sizeof(real_alignmentData.ref_seq);
@@ -154,7 +159,7 @@ void function_basecomposition(parsedData &data, alignnmentData_t &real_alignment
  * @return true if first n bases have C>T mismatch with base and have sufficient base quality
  * @return false 
  */
-bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, uint read_len, std::string_view qual_seq)
+bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_read, std::size_t read_len, std::string_view qual_seq)
 {
     if (!(FLAGS_basic > 0))
     {
@@ -162,7 +167,7 @@ bool function_basicFilter(std::string_view real_ref_seq, std::string_view real_r
     }
 
     const int limit = std::min<int>({static_cast<int>(real_ref_seq.size()), static_cast<int>(real_read.size()), FLAGS_basic});
-    for (uint pos = 0; pos < limit; ++pos)
+    for (std::size_t pos = 0; pos < limit; ++pos)
     {
         if (pos >= read_len)
         {

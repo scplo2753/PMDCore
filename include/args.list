@@ -43,6 +43,7 @@ DEFINE_bool(terminal,false,"only output reads with a C>T mismatch this many base
 
 //compute options
 DEFINE_bool(CpG, false, "only use Cs and Gs in CpG context")
+DEFINE_bool(noCpG,false,"dont use Cs and Gs in CpG context")
 
 //line filter after reconstruct ref and alignment
 DEFINE_double(maxGC, 1.0, "only process sequences with max this GC content of the aligning reference sequence")

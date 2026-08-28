@@ -1,6 +1,8 @@
 #include "parsedData.hpp"
 #include <algorithm>
 #include <stdexcept>
+#include <charconv>
+#include <limits>
 #include "utilities/sequence_utils.hpp"
 
 static bool isCigarOp(char c)
@@ -168,19 +170,31 @@ std::vector<std::pair<char,std::string>> parsedData::getCIGARList()
     return cigar_list;
 }
 
-std::vector<uint> parsedData::getOpListInCIGAR(char Op)
+std::vector<std::size_t> parsedData::getOpListInCIGAR(char Op)
 {
-    std::vector<uint> Op_list{};
-    uint current_pos = 0;
+    std::vector<std::size_t> Op_list{};
+    std::size_t current_pos = 0;
     for (auto &line : getCIGARList())
     {
-        uint step_long = std::stoi(line.second);
+        std::size_t step_length = 0;
+        const auto [ptr, ec] = std::from_chars(line.second.data(), line.second.data() + line.second.size(), step_length);
+
+        if(ec!=std::errc{}||ptr!=line.second.data() + line.second.size())
+        {
+            throw std::invalid_argument("Invalid CIGAR operation length: " + line.second);
+        }
+
+        if(step_length>std::numeric_limits<std::size_t>::max() - current_pos)
+        {
+            throw std::overflow_error("CIGAR operation length overflow: " + line.second);
+        }
+
         if (line.first == Op)
         {
-            for (int temp = current_pos; temp<(current_pos + step_long);temp++)
+            for (std::size_t temp = current_pos; temp<(current_pos + step_length);temp++)
                 Op_list.emplace_back(temp);
         }
-        current_pos += std::stoi(line.second);
+        current_pos += step_length;
     }
     return Op_list;
 }

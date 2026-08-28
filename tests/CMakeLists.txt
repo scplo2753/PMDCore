@@ -13,12 +13,11 @@ set(PMDCORE_TEST_SOURCES
     utilities_tests/utilities_math_test.cpp
     utilities_tests/utilities_test.cpp
     deamination_tests/unit/deamination_counting_test.cpp
+    deamination_tests/unit/deamination_CpG_test.cpp
+    deamination_tests/unit/deamination_noCpG_test.cpp
 )
 
-add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES}
-    statics_tests.cpp
-    deamination_tests/unit/deamination_counting_test.cpp
-    deamination_tests/unit/deamination_CpG_test.cpp)
+add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES})
 
 target_include_directories(PMDCore_tests
     PRIVATE

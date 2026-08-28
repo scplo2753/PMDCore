@@ -17,7 +17,7 @@ bool isLegalData(const recordLine_struct_t &data)
 
 ParseError splitOneLine(const std::string &line, std::vector<std::string> vector_splited_record, recordLine_struct_t &data)
 {
-    std::vector<std::string> fields(split(line));
+    std::vector<std::string> fields(splitTable(line));
     
     if (fields.size() < 11)
         return ParseError::BAD_RECORD_HAVE_EMPTY_FIELD;

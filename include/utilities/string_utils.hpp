@@ -71,19 +71,21 @@ inline bool isStringAlphabet(std::string_view str)
 }
 
 /**
- * @brief split record line and save fields to the vector<string>
+ * @brief Split a string using a single-character delimiter.
  *
- * @param[in] str record line
- * @return std::vector<std::string> vector of fields
+ * Empty fields, including trailing empty fields, are preserved.
+ *
+ * @param[in] str String to split.
+ * @param[in] delimiter Field delimiter.
+ * @return Split fields.
  */
-inline std::vector<std::string> split(const std::string &str)
+inline std::vector<std::string> split(const std::string &str,const char delimiter)
 {
     std::vector<std::string> fields;
     std::string field;
-    char del = '\x09'; //aka Tab button or \t
     for (char ch : str)
     {
-        if (ch == del)
+        if (ch == delimiter)
         {
             fields.push_back(field);
             field.clear();
@@ -95,4 +97,9 @@ inline std::vector<std::string> split(const std::string &str)
     }
     fields.push_back(field);
     return fields;
+}
+
+inline std::vector<std::string> splitTable(const std::string &str)
+{
+    return split(str, '\x09');
 }

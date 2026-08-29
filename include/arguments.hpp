@@ -11,7 +11,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "argparse/argparse.hpp"
 #include "alignment/alignment.hpp"
 #include "parsedData.hpp"
 

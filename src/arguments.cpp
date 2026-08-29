@@ -3,7 +3,10 @@
 #include <cstdlib>
 #include <ranges>
 #include <stdexcept>
+
+#include "argparse/argparse.hpp"
 #include "utilities/sequence_utils.hpp"
+#include "utilities/string_utils.hpp"
 
 #define DEFINE_bool(name, default_val, help_text) \
     bool FLAGS_##name = default_val; \

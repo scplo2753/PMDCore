@@ -1,11 +1,17 @@
 #pragma once
-#include <charconv>
 #include <optional>
 #include <string_view>
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <concepts>
+#include <type_traits>
 #include <cctype>
+#include <charconv>
+#include <iostream>
+#include <cstdlib>
+#include <functional>
+#include <utility>
 
 inline std::string strip(const std::string &str, const char &delimiter)
 {
@@ -40,7 +46,7 @@ inline std::string rstrip(const std::string &str, const char &delimiter)
 
 inline std::optional<unsigned int> parse_unsigned_integer(std::string_view str)
 {
-    if(str.empty())
+    if (str.empty())
     {
         return std::nullopt;
     }
@@ -65,9 +71,110 @@ inline std::optional<unsigned int> parse_unsigned_integer(std::string_view str)
  */
 inline bool isStringAlphabet(std::string_view str)
 {
-    return !str.empty() && std::all_of(str.begin(), str.end(), [](unsigned char ch) {
-        return std::isalpha(ch) != 0;
-    });
+    return !str.empty() && std::all_of(str.begin(), str.end(), [](unsigned char ch)
+                                       { return std::isalpha(ch) != 0; });
+}
+
+enum class StringToIntStatus
+{
+    SUCCESS = 0,
+    EMPTY_INPUT,
+    INVALID_CHARACTER,
+    OUT_OF_RANGE,
+    TRAILING_CHARACTER
+};
+
+[[nodiscard]]
+inline StringToIntStatus StringToInt(const std::string_view str, int &output) noexcept
+{
+    if (str.empty())
+    {
+        return StringToIntStatus::EMPTY_INPUT;
+    }
+
+    int result{};
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
+    switch (ec)
+    {
+    case std::errc::invalid_argument:
+        std::cerr << "invalid chars: " << str << std::endl;
+        return StringToIntStatus::INVALID_CHARACTER;
+    case std::errc::result_out_of_range:
+        std::cerr << "integer is outside the range of int: " << str << std::endl;
+        return StringToIntStatus::OUT_OF_RANGE;
+    default:
+        break;
+    }
+
+    if (ptr != str.data() + str.size())
+    {
+        std::cerr << "illegal position: " << str << std::endl;
+        return StringToIntStatus::TRAILING_CHARACTER;
+    }
+    output = result;
+    return StringToIntStatus::SUCCESS;
+}
+
+template <typename T, typename F>
+using split_transform_result_t =
+    std::invoke_result_t<F &, std::string_view, T &>;
+
+template <typename T, typename F>
+concept StatusSplitTransformer =
+    std::default_initializable<T> &&
+    std::move_constructible<T> &&
+    std::invocable<F &, std::string_view, T &> &&
+    std::equality_comparable<split_transform_result_t<T, F>>;
+
+template <typename Status>
+struct transformWhileSplitResult
+{
+    std::size_t field_index;
+    std::size_t offset;
+    Status status;
+};
+
+template <typename T, typename F>
+    requires StatusSplitTransformer<T, F>
+[[nodiscard]]
+inline auto transformWhileSplit(std::string_view input, char delimiter, std::vector<T> &output,
+                                F &&func, std::invoke_result_t<F &, std::string_view, T &> success_status)
+    -> transformWhileSplitResult<split_transform_result_t<T, F>>
+{
+    using Status = split_transform_result_t<T, F>;
+
+    std::vector<T> transformed;
+    std::size_t field_begin = 0;
+    std::size_t field_index = 0;
+
+    for (std::size_t pos = 0; pos <= input.size(); ++pos)
+    {
+        if (pos != input.size() && input[pos] != delimiter)
+        {
+            continue;
+        }
+        const std::string_view field = input.substr(field_begin, pos - field_begin);
+
+        T converted{};
+
+        const Status status = std::invoke(func, field, converted);
+
+        if (status != success_status)
+        {
+            return {
+                field_index, field_begin, status};
+        }
+
+        transformed.push_back(std::move(converted));
+        field_begin = pos + 1;
+        field_index += 1;
+    }
+    output = std::move(transformed);
+
+    return {
+        field_index,
+        input.size(),
+        success_status};
 }
 
 /**
@@ -80,7 +187,7 @@ inline std::vector<std::string> split(const std::string &str)
 {
     std::vector<std::string> fields;
     std::string field;
-    char del = '\x09'; //aka Tab button or \t
+    char del = '\x09'; // aka Tab button or \t
     for (char ch : str)
     {
         if (ch == del)

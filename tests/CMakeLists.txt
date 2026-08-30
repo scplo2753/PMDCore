@@ -15,6 +15,8 @@ set(PMDCORE_TEST_SOURCES
     deamination_tests/unit/deamination_counting_test.cpp
     deamination_tests/unit/deamination_CpG_test.cpp
     deamination_tests/unit/deamination_noCpG_test.cpp
+    utilities_tests/utilities_StringToInt_test.cpp
+    utilities_tests/utilities_transformWhileSplit_test.cpp
 )
 
 add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES})

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "seqProcedures.hpp"
 #include "arguments.hpp"
 #include "utilities/sequence_utils.hpp"

@@ -84,3 +84,6 @@ CMakeLists.txt.user*
 .vscode/
 .clangd
 pmdtools.0.60.py
+
+# clangd
+/.cache/

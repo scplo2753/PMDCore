@@ -97,10 +97,8 @@ inline StringToIntStatus StringToInt(const std::string_view str, int &output) no
     switch (ec)
     {
     case std::errc::invalid_argument:
-        std::cerr << "invalid chars: " << str << std::endl;
         return StringToIntStatus::INVALID_CHARACTER;
     case std::errc::result_out_of_range:
-        std::cerr << "integer is outside the range of int: " << str << std::endl;
         return StringToIntStatus::OUT_OF_RANGE;
     default:
         break;
@@ -108,7 +106,6 @@ inline StringToIntStatus StringToInt(const std::string_view str, int &output) no
 
     if (ptr != str.data() + str.size())
     {
-        std::cerr << "illegal position: " << str << std::endl;
         return StringToIntStatus::TRAILING_CHARACTER;
     }
     output = result;

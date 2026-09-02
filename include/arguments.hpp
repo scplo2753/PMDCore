@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <span>
 #include "alignment/alignment.hpp"
 #include "parsedData.hpp"
 
@@ -40,6 +41,12 @@
 #undef DEFINE_string
 #undef DEFINE_double
 
+enum class CustomTerminusStatus {
+  MATCHED,
+  NOT_MATCHED,
+  INVALID_POSITION
+};
+
 void initCMDParse(int argc, char *argv[]);
 
 // need for implement
@@ -51,12 +58,72 @@ bool function_basicTerminal(std::string_view real_read, std::string_view real_re
 
 void function_in_thread_pool_maskterminaldeam_or_maskterminalbases(const std::string &maskedseq, std::string &real_read, bool is_reverse, const std::vector<std::string> &splited_line, std::string &origin_line);
 
-namespace ParamChecks{
-    inline bool isUsing_maskTerminalBases(){
-        return IS_USED_maskterminalbases;
-    }
+/**
+ * @brief Checks custom terminal positions for deamination mismatches.
+ *
+ * The positions specified by @c --customterminus are examined in their
+ * original order. Non-negative positions are indexed from the beginning of
+ * the aligned reference sequence. Negative positions are resolved relative
+ * to the end of the aligned reference sequence.
+ *
+ * At non-negative positions, the function detects C-to-T mismatches. At
+ * negative positions, it detects C-to-T mismatches when @c --ss is enabled
+ * and G-to-A mismatches otherwise. A mismatch is accepted only when the
+ * corresponding Phred+33 quality score is greater than or equal to
+ * @c --requirebaseq.
+ *
+ * If at least one qualifying mismatch is found, the SAM record is written to
+ * standard output. If no qualifying mismatch is found, the trailing newline
+ * is removed from @p line and the @c LS:Z:0 tag is appended.
+ *
+ * @param[in] real_read
+ *     Aligned read sequence containing the observed bases.
+ * @param[in] real_ref_seq
+ *     Aligned reference sequence containing the reference bases. Its length
+ *     is used to resolve negative custom positions.
+ * @param[in] quals
+ *     Phred+33 quality characters corresponding to aligned sequence
+ *     positions.
+ * @param[in,out] line
+ *     SAM record associated with the sequences. The record is not modified
+ *     when a match is found, but is written to standard output. When no match
+ *     is found, its trailing newline is removed and @c LS:Z:0 is appended.
+ *     It remains unchanged if a requested position is invalid.
+ *
+ * @retval CustomTerminusStatus::MATCHED
+ *     At least one requested position contains a qualifying deamination
+ *     mismatch. The SAM record has been written to standard output.
+ * @retval CustomTerminusStatus::NOT_MATCHED
+ *     All requested positions are valid, but none contains a qualifying
+ *     mismatch. The @c LS:Z:0 tag has been appended to @p line.
+ * @retval CustomTerminusStatus::INVALID_POSITION
+ *     At least one resolved position falls outside @p real_ref_seq,
+ *     @p real_read, or @p quals. The SAM record is neither modified nor
+ *     written.
+ *
+ * @pre The custom positions have been parsed by inputParams_validator().
+ * @pre Quality characters use Phred+33 encoding.
+ *
+ * @note A negative position is resolved using the length of
+ *       @p real_ref_seq, and the resulting absolute index is then used for
+ *       all three input sequences.
+ *
+ * @see CustomTerminusStatus
+ * @see get_customTerminusPositions()
+ */
+ [[nodiscard]]
+CustomTerminusStatus function_customterminus(std::string_view real_read,
+                             std::string_view real_ref_seq,
+                             std::string_view quals, std::string &line);
 
-    inline bool isUsing_maskTerminalDeaminations(){
-        return IS_USED_maskterminaldeaminations;
+std::span<const int> get_customTerminusPositions() noexcept;
+
+namespace ParamChecks{
+inline bool isUsing_customterminus() { return IS_USED_customterminus; }
+
+inline bool isUsing_maskTerminalBases() { return IS_USED_maskterminalbases; }
+
+inline bool isUsing_maskTerminalDeaminations() {
+  return IS_USED_maskterminaldeaminations;
     }
 }

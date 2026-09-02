@@ -1,8 +1,12 @@
 #include "arguments.hpp"
 #include <algorithm>
 #include <cstdlib>
-#include <ranges>
+#include <cstddef>
+#include <iostream>
 #include <stdexcept>
+#include <span>
+#include <string_view>
+#include <vector>
 
 #include "argparse/argparse.hpp"
 #include "utilities/sequence_utils.hpp"
@@ -34,6 +38,10 @@
 #undef DEFINE_string
 #undef DEFINE_double
 
+namespace {
+std::optional<std::vector<int>> parsed_customterminus_positions;
+}
+
 void inputParams_validator()
 {
     // Validation policy: ../OPEN_QUESTIONS.md#semantics-of---range-0
@@ -55,6 +63,33 @@ void inputParams_validator()
     if(FLAGS_CpG && FLAGS_noCpG)
     {
         throw(std::invalid_argument("Cannot use both --CpG and --noCpG simultaneously"));
+    }
+
+    if (IS_USED_customterminus) {
+      std::vector<int> temp_customTerminus{};
+      auto [index, offset, status] =
+          transformWhileSplit(FLAGS_customterminus, ',', temp_customTerminus,
+                              StringToInt, StringToIntStatus::SUCCESS);
+      switch (status) {
+      case StringToIntStatus::EMPTY_INPUT:
+        std::cerr << "Error: (customTerminus) empty input" << std::endl;
+        exit(1);
+      case StringToIntStatus::INVALID_CHARACTER:
+        std::cerr << "Error: (customTerminus) illegal input: "
+                  << FLAGS_customterminus << std::endl;
+        exit(1);
+      case StringToIntStatus::TRAILING_CHARACTER:
+        std::cerr << "Error: (customTerminus) trailing import: "
+                  << FLAGS_customterminus << std::endl;
+        exit(1);
+      case StringToIntStatus::OUT_OF_RANGE:
+        std::cerr << "Error: (customterminus) input out of range: "
+                  << FLAGS_customterminus << std::endl;
+        exit(1);
+      case StringToIntStatus::SUCCESS:
+        break;
+      }
+      ::parsed_customterminus_positions = temp_customTerminus;
     }
 }
 
@@ -298,4 +333,75 @@ void function_in_thread_pool_maskterminaldeam_or_maskterminalbases(const std::st
     }
 
     origin_line = std::move(rebuilt);
+}
+
+/**
+ * @brief Returns a read-only view of the parsed --customterminus positions.
+ *
+ * The returned span is empty when --customterminus was not specified.
+ * The positions retain their signed values; negative positions are resolved
+ * later using the length of each sequence.
+ *
+ * The view remains valid as long as the parsed argument storage is not
+ * reset or replaced.
+ *
+ * @return A read-only view of the parsed custom terminus positions.
+ */
+[[nodiscard]]
+std::span<const int> get_customTerminusPositions() noexcept {
+  if (::parsed_customterminus_positions != std::nullopt) {
+    return {parsed_customterminus_positions->data(),
+            parsed_customterminus_positions->size()};
+  } else
+    return {};
+}
+
+[[nodiscard]]
+CustomTerminusStatus function_customterminus(std::string_view real_read,
+                             std::string_view real_ref_seq,
+                             std::string_view quals, std::string &line) {
+  bool flag_LS = false;
+  const auto reference_length =
+      static_cast<std::ptrdiff_t>(real_ref_seq.size());
+
+  auto raw_positions = get_customTerminusPositions();
+
+  for (const int raw_position: raw_positions) {
+    std::ptrdiff_t position = raw_position;
+
+    if (position < 0) {
+      position += reference_length;
+    }
+    if (position >= reference_length || position < 0) {
+      return CustomTerminusStatus::INVALID_POSITION;
+    }
+    if (position >= quals.size()) {
+      return CustomTerminusStatus::INVALID_POSITION;
+    }
+    const auto index = static_cast<std::size_t>(position);
+    if (position >= real_read.size()) {
+      return CustomTerminusStatus::INVALID_POSITION;
+    }
+
+    const char &reference_position = real_ref_seq[index];
+    const char &read_position = real_read[index];
+    if (raw_position >= 0 || (raw_position < 0 && FLAGS_ss)) {
+      if (reference_position == 'C' && read_position == 'T' &&
+          (quals[index] - 33 >= FLAGS_requirebaseq))
+        flag_LS = true;
+    } else if (raw_position < 0) {
+      if (reference_position == 'G' && read_position == 'A' &&
+          quals[index] - 33 >= FLAGS_requirebaseq)
+        flag_LS = true;
+    }
+  }
+  if(flag_LS)
+    std::cout << rstrip(line, '\n') << std::endl;
+  else {
+    line = rstrip(line, '\n');
+    line += "\t";
+    line+="LS:Z:0";
+    return CustomTerminusStatus::NOT_MATCHED;
+  }
+    return CustomTerminusStatus::MATCHED;
 }

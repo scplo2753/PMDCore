@@ -148,7 +148,15 @@ int main(int argc, char *argv[])
         }
         /// @todo imple first param
         /// @todo imple Leipzigsimple
-        /// @todo imple customterminus
+
+        if (ParamChecks::isUsing_customterminus()) {
+          CustomTerminusStatus CT_result = function_customterminus(
+              data_ptr.getReadSeq(), alignnmentData.ref_seq,
+              data_ptr.getQualityScores(), line);
+
+          if (CT_result != CustomTerminusStatus::MATCHED)
+            continue;
+        }
         /// @todo imple if options.perc_identity > 0.01 or options.printalignments:
 
         // 注意：需要复制 raw_data 和 alignnmentData，避免栈空间问题

@@ -61,6 +61,7 @@ DEFINE_bool(deamination,false,"output base frequencies in the read at positions 
 DEFINE_bool(header,false,"output the sam header")
 
 //others
+DEFINE_string(customterminus,"","custom terminus, example: --customterminus 0,-1,-2,-3")
 //DEFINE_bool(writesamfield, false, "add 'DS:Z:<PMDS>' field to SAM output, will overwrite if already present")
 
 ///@todo list of params that not yet implemented

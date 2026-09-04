@@ -7,6 +7,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+#include <optional>
 
 #include "argparse/argparse.hpp"
 #include "utilities/sequence_utils.hpp"
@@ -24,6 +25,10 @@
     std::string FLAGS_##name = default_val; \
     bool IS_USED_##name=false;
 
+#define DEFINE_POSITION_LIST(name, default_val, help_text)                     \
+  std::string FLAGS_##name = default_val;                                      \
+  bool IS_USED_##name = false;
+
 #define DEFINE_double(name, default_val, help_text) \
     double FLAGS_##name = default_val;  \
     bool IS_USED_##name=false;
@@ -32,6 +37,7 @@
 
 #include "args.list"
 
+#undef DEFINE_POSITION_LIST
 #undef DEFINE_uint32
 #undef DEFINE_bool
 #undef DEFINE_int32
@@ -111,8 +117,16 @@ void initCMDParse(int argc, char *argv[])
 
     #define DEFINE_uint32(name, default_val, help_text) DEFINE_int32(name, default_val, help_text)
 
+    #define DEFINE_POSITION_LIST(name, default_val, help_text)                     \
+        parser.add_argument("--" #name)                                            \
+            .default_value(std::string{default_val})                               \
+            .help(help_text)                                                       \
+            .remaining()                                                           \
+            .nargs(1);
+
     #include "args.list"
 
+    #undef DEFINE_POSITION_LIST
     #undef DEFINE_uint32
     #undef DEFINE_bool
     #undef DEFINE_int32
@@ -127,7 +141,7 @@ void initCMDParse(int argc, char *argv[])
             if (parser.get<bool>("--" #name))            \
             {                                            \
                 FLAGS_##name = true;                     \
-            }                                            \
+            }
 
     #define DEFINE_int32(name, default_val, help_text) \
             FLAGS_##name = parser.get<int>("--" #name); \
@@ -143,8 +157,13 @@ void initCMDParse(int argc, char *argv[])
         FLAGS_##name = parser.get<std::string>("--" #name); \
         IS_USED_##name = parser.is_used("--" #name);
 
+    #define DEFINE_POSITION_LIST(name, default_val, help_text)                     \
+        FLAGS_##name = parser.get<std::string>("--" #name);                    \
+        IS_USED_##name = parser.is_used("--" #name);
+
     #include "args.list"
 
+    #undef DEFINE_POSITION_LIST
     #undef DEFINE_bool
     #undef DEFINE_int32
     #undef DEFINE_uint32

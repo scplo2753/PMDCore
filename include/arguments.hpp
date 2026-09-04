@@ -28,6 +28,10 @@
     extern std::string FLAGS_##name; \
     extern bool IS_USED_##name;
 
+#define DEFINE_POSITION_LIST(name, default_val, help_text)                     \
+    extern std::string FLAGS_##name;                                             \
+    extern bool IS_USED_##name;
+
 #define DEFINE_double(name, default_val, help_text) \
     extern double FLAGS_##name;     \
     extern bool IS_USED_##name;
@@ -39,6 +43,7 @@
 #undef DEFINE_bool
 #undef DEFINE_int32
 #undef DEFINE_string
+#undef DEFINE_POSITION_LIST
 #undef DEFINE_double
 
 enum class CustomTerminusStatus {
@@ -111,11 +116,12 @@ void function_in_thread_pool_maskterminaldeam_or_maskterminalbases(const std::st
  * @see CustomTerminusStatus
  * @see get_customTerminusPositions()
  */
- [[nodiscard]]
+[[nodiscard]]
 CustomTerminusStatus function_customterminus(std::string_view real_read,
                              std::string_view real_ref_seq,
                              std::string_view quals, std::string &line);
 
+[[nodiscard]]
 std::span<const int> get_customTerminusPositions() noexcept;
 
 namespace ParamChecks{

@@ -19,7 +19,8 @@ set(PMDCORE_TEST_SOURCES
     utilities_tests/utilities_transformWhileSplit_test.cpp
 )
 
-add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES})
+add_executable(PMDCore_tests ${PMDCORE_TEST_SOURCES}
+    Arguments/After_Reconstruct/customTerminus_test.cpp)
 
 target_include_directories(PMDCore_tests
     PRIVATE

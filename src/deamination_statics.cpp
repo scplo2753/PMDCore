@@ -1,10 +1,10 @@
 #include "deamination_statics.hpp"
 #include <array>
 #include <iostream>
-#include <string>
+#include <string_view>
 #include "utilities/math_utils.hpp"
 
-constexpr std::array<std::string, 8> pairs = {"CT", "CA", "CG", "CC", "GA", "GT", "GC", "GG"};
+constexpr std::array<std::string_view, 8> pairs = {"CT", "CA", "CG", "CC", "GA", "GT", "GC", "GG"};
 
 void print_deamination_statistics(const deamination_statics_t &statistics)
 {

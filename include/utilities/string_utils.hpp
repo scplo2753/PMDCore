@@ -74,7 +74,7 @@ inline bool isStringAlphabet(std::string_view str)
                                        { return std::isalpha(ch) != 0; });
 }
 
-enum class StringToIntStatus
+enum class ParseIntegerStatus
 {
     SUCCESS = 0,
     EMPTY_INPUT,
@@ -83,32 +83,35 @@ enum class StringToIntStatus
     TRAILING_CHARACTER
 };
 
+template <typename IntegerType>
+    requires std::integral<IntegerType> && std::same_as<IntegerType, std::remove_cv_t<IntegerType>> &&
+             requires(const char* first, const char* last, IntegerType& value) { std::from_chars(first, last, value); }
 [[nodiscard]]
-inline StringToIntStatus StringToInt(const std::string_view str, int &output) noexcept
+inline ParseIntegerStatus ParseInteger(const std::string_view str, IntegerType& output) noexcept
 {
     if (str.empty())
     {
-        return StringToIntStatus::EMPTY_INPUT;
+        return ParseIntegerStatus::EMPTY_INPUT;
     }
 
-    int result{};
+    IntegerType result{};
     auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
     switch (ec)
     {
-    case std::errc::invalid_argument:
-        return StringToIntStatus::INVALID_CHARACTER;
-    case std::errc::result_out_of_range:
-        return StringToIntStatus::OUT_OF_RANGE;
-    default:
-        break;
+        case std::errc::invalid_argument:
+            return ParseIntegerStatus::INVALID_CHARACTER;
+        case std::errc::result_out_of_range:
+            return ParseIntegerStatus::OUT_OF_RANGE;
+        default:
+            break;
     }
 
     if (ptr != str.data() + str.size())
     {
-        return StringToIntStatus::TRAILING_CHARACTER;
+        return ParseIntegerStatus::TRAILING_CHARACTER;
     }
     output = result;
-    return StringToIntStatus::SUCCESS;
+    return ParseIntegerStatus::SUCCESS;
 }
 
 template <typename T, typename F>

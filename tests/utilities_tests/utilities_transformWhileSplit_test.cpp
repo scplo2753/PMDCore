@@ -14,9 +14,9 @@ TEST(transformWhileSplit,normal)
 
     vector<int> expected{0, 1, 2, -1, -2};
 
-    auto [index, offset, status] = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto [index, offset, status] = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(status, StringToIntStatus::SUCCESS);
+    EXPECT_EQ(status, ParseIntegerStatus::SUCCESS);
 
     EXPECT_EQ(index, expected.size());
     EXPECT_EQ(offset, customterminus.size());
@@ -30,9 +30,9 @@ TEST(transformWhileSplit,with_space)
     const string customterminus("0, ,2, ,-2");
     vector<int> transformed{};
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::INVALID_CHARACTER);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::INVALID_CHARACTER);
     EXPECT_EQ(returns.field_index, 1);
     EXPECT_EQ(returns.offset, 2);
 
@@ -45,9 +45,9 @@ TEST(transformWhileSplit,single_number)
     vector<int> transformed;
     vector<int> expected{20};
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::SUCCESS);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::SUCCESS);
 
     EXPECT_EQ(returns.field_index, expected.size());
     EXPECT_EQ(returns.offset, customterminus.size());
@@ -60,9 +60,9 @@ TEST(transformWhileSplit,empty_input)
     vector<int> transformed{20};
     const auto origin = transformed;
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::EMPTY_INPUT);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::EMPTY_INPUT);
 
     EXPECT_EQ(returns.field_index, 0U);
     EXPECT_EQ(returns.offset, 0U);
@@ -76,9 +76,9 @@ TEST(transformWhileSplit,empty_between_two_number)
     vector<int> transformed{20};
     const auto origin = transformed;
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::EMPTY_INPUT);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::EMPTY_INPUT);
 
     EXPECT_EQ(returns.field_index, 1U);
     EXPECT_EQ(returns.offset, 2U);
@@ -92,9 +92,9 @@ TEST(transformWhileSplit,first_element_is_empty)
     vector<int> transformed{20};
     const auto origin = transformed;
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::EMPTY_INPUT);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::EMPTY_INPUT);
 
     EXPECT_EQ(returns.field_index, 0U);
     EXPECT_EQ(returns.offset, 0U);
@@ -108,9 +108,9 @@ TEST(transformWhileSplit,last_element_is_empty)
     vector<int> transformed{20};
     const auto origin = transformed;
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::EMPTY_INPUT);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::EMPTY_INPUT);
 
     EXPECT_EQ(returns.field_index, 1U);
     EXPECT_EQ(returns.offset, 3U);
@@ -124,9 +124,9 @@ TEST(transformWhileSplit,trailiing_character_in_middle)
     vector<int> transformed{20};
     const auto origin = transformed;
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::TRAILING_CHARACTER);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::TRAILING_CHARACTER);
 
     EXPECT_EQ(returns.field_index, 1U);
     EXPECT_EQ(returns.offset, 3U);
@@ -140,9 +140,9 @@ TEST(transformWhileSplit,out_of_range)
     vector<int> transformed{20};
     const auto origin = transformed;
 
-    auto returns = transformWhileSplit(customterminus, ',', transformed, StringToInt, StringToIntStatus::SUCCESS);
+    auto returns = transformWhileSplit(customterminus, ',', transformed, ParseInteger<int>, ParseIntegerStatus::SUCCESS);
 
-    EXPECT_EQ(returns.status, StringToIntStatus::OUT_OF_RANGE);
+    EXPECT_EQ(returns.status, ParseIntegerStatus::OUT_OF_RANGE);
 
     EXPECT_EQ(returns.field_index, 1U);
     EXPECT_EQ(returns.offset, 2U);

@@ -75,24 +75,24 @@ void inputParams_validator()
       std::vector<int> temp_customTerminus{};
       auto [index, offset, status] =
           transformWhileSplit(FLAGS_customterminus, ',', temp_customTerminus,
-                              StringToInt, StringToIntStatus::SUCCESS);
+                              ParseInteger<int>, ParseIntegerStatus::SUCCESS);
       switch (status) {
-      case StringToIntStatus::EMPTY_INPUT:
+      case ParseIntegerStatus::EMPTY_INPUT:
         std::cerr << "Error: (customTerminus) empty input" << std::endl;
         exit(1);
-      case StringToIntStatus::INVALID_CHARACTER:
+      case ParseIntegerStatus::INVALID_CHARACTER:
         std::cerr << "Error: (customTerminus) illegal input: "
                   << FLAGS_customterminus << std::endl;
         exit(1);
-      case StringToIntStatus::TRAILING_CHARACTER:
+      case ParseIntegerStatus::TRAILING_CHARACTER:
         std::cerr << "Error: (customTerminus) trailing import: "
                   << FLAGS_customterminus << std::endl;
         exit(1);
-      case StringToIntStatus::OUT_OF_RANGE:
+      case ParseIntegerStatus::OUT_OF_RANGE:
         std::cerr << "Error: (customterminus) input out of range: "
                   << FLAGS_customterminus << std::endl;
         exit(1);
-      case StringToIntStatus::SUCCESS:
+      case ParseIntegerStatus::SUCCESS:
         break;
       }
       ::parsed_customterminus_positions = temp_customTerminus;

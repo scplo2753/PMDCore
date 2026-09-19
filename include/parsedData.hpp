@@ -1,16 +1,34 @@
 #pragma once
+#include <sys/stat.h>
 #include "sam/enum_flags.hpp"
 #include "sam/struct_record.hpp"
+#include <cstddef>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 #include <algorithm>
+
+enum class parsedRecordError
+{
+    SUCCESS,
+    CIGAR_EMPTY,
+    BAD_CIGAR_FORMAT,
+    INVALID_CIGAR_OPERATION,
+    INVALID_CIGAR_STEP
+};
+
+class parsedData;
+
+using parsedRecordResult = std::variant<parsedData, parsedRecordError>;
+using CIGARList_t = std::vector<std::pair<char, std::size_t>>;
 
 class parsedData
 {
 public:
-    // construction/destruction functions
-    parsedData(const recordLine_struct_t data);
-    ~parsedData() = default;
+    // entry function
+    [[nodiscard]]
+    static parsedRecordResult parseRawData(const recordLine_struct_t &record);
 
     // get raw data functions
     std::string getQNAME() const { return data.QNAME; }
@@ -28,7 +46,7 @@ public:
     std::string getTagValue(const std::string &tag) const;
 
     // CIGAR functions
-    std::vector<std::pair<char, std::string>> getCIGARList();
+    CIGARList_t getCIGARList() const {return cigar_list;}
     std::vector<std::size_t> getInsertionList() { return getOpListInCIGAR('I'); }
     std::vector<std::size_t> getSoftClipList() { return getOpListInCIGAR('S'); }
     std::vector<std::size_t> getMatchList() { return getOpListInCIGAR('M'); }
@@ -58,10 +76,15 @@ public:
     void set_ReadSeq_reverseSeq();
 
 private:
-    recordLine_struct_t data;
-    std::vector<std::pair<char, std::string>> cigar_list;
-    bool flag_isReadReversed;
+    // construct function
+ parsedData(recordLine_struct_t data, CIGARList_t cigarList)
+     : data(std::move(data)),cigar_list(std::move(cigarList)), flag_isReadReversed(false) {};
 
-    // functions
-    std::vector<std::size_t> getOpListInCIGAR(char Op);
+ // functions
+ std::vector<std::size_t> getOpListInCIGAR(char Op);
+ [[nodiscard]] static parsedRecordError parseCIGAR(const recordLine_struct_t& raw_data, CIGARList_t& output);
+
+ recordLine_struct_t data;
+ CIGARList_t cigar_list;
+ bool flag_isReadReversed;
 };

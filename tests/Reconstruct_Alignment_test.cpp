@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
+#include "parsedData_test_helpers.hpp"
 #include "seqProcedures.hpp"
 #include "parsedData.hpp"
 
 TEST(ReconstructAlignmentTest, SimpleMatchWithoutInsertions)
 {
     recordLine_struct_t raw_data{"read1", "0", "chr1", 1, 60, "10M", "ACGTACGTAC", "IIIIIIIIII", {{"MD", {'Z', "10"}}}};
-    parsedData parsed(raw_data);
+    auto parsed = requireParsedRecord(raw_data);
     alignnmentData_t result{};
 
     EXPECT_EQ(0, ReconstructAlignmentAndRefSeq(parsed, result));
@@ -16,7 +17,7 @@ TEST(ReconstructAlignmentTest, SimpleMatchWithoutInsertions)
 TEST(ReconstructAlignmentTest, MatchWithInsertionAddsGapToRefSeq)
 {
     recordLine_struct_t raw_data{"read2", "0", "chr1", 1, 60, "5M1I4M", "ACGTACGTAC", "IIIIIIIIII", {{"MD", {'Z', "10"}}}};
-    parsedData parsed(raw_data);
+    auto parsed = requireParsedRecord(raw_data);
     alignnmentData_t result{};
 
     EXPECT_EQ(0, ReconstructAlignmentAndRefSeq(parsed, result));
@@ -27,7 +28,7 @@ TEST(ReconstructAlignmentTest, MatchWithInsertionAddsGapToRefSeq)
 TEST(ReconstructAlignmentTest, ReversedReadProducesReverseComplementRefSeq)
 {
     recordLine_struct_t raw_data{"read3", "16", "chr1", 1, 60, "10M", "ACGTACGTAC", "IIIIIIIIII", {{"MD", {'Z', "10"}}}};
-    parsedData parsed(raw_data);
+    auto parsed = requireParsedRecord(raw_data);
     alignnmentData_t result{};
 
     EXPECT_EQ(0, ReconstructAlignmentAndRefSeq(parsed, result));
@@ -38,11 +39,10 @@ TEST(ReconstructAlignmentTest, ReversedReadProducesReverseComplementRefSeq)
 TEST(ReconstructAlignmentTest, MissingMDTagReturnsError)
 {
     recordLine_struct_t raw_data{"read4", "0", "chr1", 1, 60, "10M", "ACGTACGTAC", "IIIIIIIIII", {}};
-    parsedData parsed(raw_data);
+    auto parsed = requireParsedRecord(raw_data);
     alignnmentData_t result{};
 
     EXPECT_EQ(-1, ReconstructAlignmentAndRefSeq(parsed, result));
     EXPECT_TRUE(result.alignment.empty());
     EXPECT_TRUE(result.ref_seq.empty());
 }
-

@@ -1,5 +1,7 @@
+#include <exception>
 #include <iostream>
 #include <fstream>
+#include <variant>
 #include <vector>
 #include <string>
 #include <math.h>
@@ -117,15 +119,24 @@ int main(int argc, char *argv[])
         }
         */
 
-        parsedData data_ptr(raw_data);
+        parsedRecordResult parseResult = parsedData::parseRawData(raw_data);
+        parsedData* record_ptr = nullptr;
+        if(auto* result_ptr=std::get_if<parsedData>(&parseResult))
+        {
+            record_ptr = result_ptr;
+        }
+        else {
+            continue;
+        }
+
         alignnmentData_t alignnmentData;
-        int result = ReconstructAlignmentAndRefSeq(data_ptr, alignnmentData);
+        int result = ReconstructAlignmentAndRefSeq(*record_ptr, alignnmentData);
         if (result == -1)
             continue;
 
         string maskedseq{};
         if (ParamChecks::isUsing_maskTerminalBases()|| ParamChecks::isUsing_maskTerminalDeaminations())
-            maskedseq = data_ptr.getReadSeq();
+            maskedseq = record_ptr->getReadSeq();
         if (!isGCcontentInRange(alignnmentData))
             continue;
         if (!badRefSeq_Vailder(alignnmentData.ref_seq, line))
@@ -133,14 +144,16 @@ int main(int argc, char *argv[])
         /// @todo imple basecomposition param
         if (IS_USED_basic && FLAGS_basic > 0)
         {
-            if (function_basicFilter(alignnmentData.ref_seq, data_ptr.getReadSeq(), data_ptr.getReadSeq().size(), data_ptr.getQualityScores()))
+            if (function_basicFilter(alignnmentData.ref_seq, record_ptr->getReadSeq(), record_ptr->getReadSeq().size(),
+                                     record_ptr->getQualityScores()))
             {
                 std::cout << line << std::endl;
             }
         }
         if (FLAGS_terminal)
         {
-            if (function_basicTerminal(data_ptr.getReadSeq(), alignnmentData.ref_seq, data_ptr.getQualityScores()))
+            if (function_basicTerminal(record_ptr->getReadSeq(), alignnmentData.ref_seq,
+                                       record_ptr->getQualityScores()))
             {
                 std::cout << line << std::endl;
                 continue;
@@ -149,18 +162,17 @@ int main(int argc, char *argv[])
         /// @todo imple first param
         /// @todo imple Leipzigsimple
 
-        if (ParamChecks::isUsing_customterminus()) {
-          CustomTerminusStatus CT_result = function_customterminus(
-              data_ptr.getReadSeq(), alignnmentData.ref_seq,
-              data_ptr.getQualityScores(), line);
+        if (ParamChecks::isUsing_customterminus())
+        {
+            CustomTerminusStatus CT_result = function_customterminus(record_ptr->getReadSeq(), alignnmentData.ref_seq,
+                                                                     record_ptr->getQualityScores(), line);
 
-          if (CT_result != CustomTerminusStatus::MATCHED)
-            continue;
+            if (CT_result != CustomTerminusStatus::MATCHED) continue;
         }
         /// @todo imple if options.perc_identity > 0.01 or options.printalignments:
 
         // 注意：需要复制 raw_data 和 alignnmentData，避免栈空间问题
-        WorkItem work_item = {raw_data, data_ptr, alignnmentData};
+        WorkItem work_item = {raw_data, *record_ptr, alignnmentData};
 
         thread_pool.enqueue(
             process_single_line,

@@ -1,8 +1,12 @@
 #include "parsedData.hpp"
 #include <algorithm>
+#include <cctype>
+#include <iostream>
 #include <stdexcept>
 #include <charconv>
 #include <limits>
+#include <string>
+#include "sam/struct_record.hpp"
 #include "utilities/sequence_utils.hpp"
 
 static bool isCigarOp(char c)
@@ -24,8 +28,16 @@ static bool isCigarOp(char c)
     }
 }
 
-parsedData::parsedData(const recordLine_struct_t data) : data(data), flag_isReadReversed(false)
+parsedRecordResult parsedData::parseRawData(const recordLine_struct_t& raw_data)
 {
+    CIGARList_t cigar_list{};
+    auto parse_status = parseCIGAR(raw_data,cigar_list);
+    if(parse_status!=parsedRecordError::SUCCESS)
+    {
+        return parse_status;
+    }
+
+    return parsedData(raw_data,std::move(cigar_list));
 }
 
 void parsedData::set_ReadSeq_reverseSeq()
@@ -123,19 +135,16 @@ std::vector<std::string> parsedData::getMDList() const
     return md_list;
 }
 
-/******
- * @brief return splited CIGAR tag, if the tag does not exist, return an empty vector. The CIGAR tag is split into numbers and non-numbers, for example, "10M5S" will be split into [("M", "10"), ("S", "5")].
- * @returns return splitd CIGAR tags if exists, else return empty vector.
- * @todo consider to delete return empty vector if the CIGAR tag does not exist, since the CIGAR tag is a required field in SAM format.
- */
-std::vector<std::pair<char,std::string>> parsedData::getCIGARList()
+parsedRecordError parsedData::parseCIGAR(const recordLine_struct_t& raw_data, CIGARList_t& output)
 {
-    if (!cigar_list.empty())
+    if (raw_data.cigar.empty() || raw_data.cigar == "*")
     {
-        return cigar_list;
+        std::cerr <<"Warning: "<<raw_data.QNAME << " has no CIGAR data\n";
+        return parsedRecordError::CIGAR_EMPTY;
     }
 
-    const std::string &cigar = data.cigar;
+    std::vector<std::pair<char,std::size_t>> temp_cigar_list{};
+    std::string_view cigar = raw_data.cigar;
     const size_t n = cigar.size();
 
     size_t pos = 0;
@@ -148,45 +157,53 @@ std::vector<std::pair<char,std::string>> parsedData::getCIGARList()
 
         if (pos == num_start)
         {
-            ++pos;
-            continue; 
+            std::cerr << "Warning: " << raw_data.QNAME << " has an invalid CIGAR format. This line will be skipped\n";
+            return parsedRecordError::BAD_CIGAR_FORMAT;
         }
 
         if (pos >= n)
-            break; 
+        {
+            std::cerr << "Warning: " << raw_data.QNAME << " has an invalid CIGAR format. This line will be skipped\n";
+            return parsedRecordError::BAD_CIGAR_FORMAT;
+        }
 
         char op = cigar[pos];
 
         if (!isCigarOp(op))
         {
-            ++pos;
-            continue; 
+            std::cerr << "Warning: " << raw_data.QNAME << " has an invalid CIGAR operation: " << op
+                      << ". This line will be skipped." << "\n";
+            return parsedRecordError::INVALID_CIGAR_OPERATION;
         }
 
-        cigar_list.emplace_back(op, cigar.substr(num_start, pos - num_start));
+        std::string_view str_cigar_step{cigar.data()+num_start,pos-num_start};
+        std::size_t step{};
+        auto [ptr, ec] = std::from_chars(str_cigar_step.data(), str_cigar_step.data() + str_cigar_step.size(), step);
+        if(ec!=std::errc{}||ptr!=str_cigar_step.data() + str_cigar_step.size())
+        {
+            std::cerr << "Warning: " << raw_data.QNAME << " has an invalid CIGAR operation length " << str_cigar_step << "\n";
+            return parsedRecordError::INVALID_CIGAR_STEP;
+        }
+        temp_cigar_list.emplace_back(op, step);
         ++pos;
     }
 
-    return cigar_list;
+    output = std::move(temp_cigar_list);
+    return parsedRecordError::SUCCESS;
 }
+
 
 std::vector<std::size_t> parsedData::getOpListInCIGAR(char Op)
 {
     std::vector<std::size_t> Op_list{};
     std::size_t current_pos = 0;
-    for (auto &line : getCIGARList())
+    for (auto &line : cigar_list)
     {
-        std::size_t step_length = 0;
-        const auto [ptr, ec] = std::from_chars(line.second.data(), line.second.data() + line.second.size(), step_length);
-
-        if(ec!=std::errc{}||ptr!=line.second.data() + line.second.size())
-        {
-            throw std::invalid_argument("Invalid CIGAR operation length: " + line.second);
-        }
+        std::size_t step_length = line.second;
 
         if(step_length>std::numeric_limits<std::size_t>::max() - current_pos)
         {
-            throw std::overflow_error("CIGAR operation length overflow: " + line.second);
+            throw std::overflow_error("CIGAR operation length overflow: " + std::to_string(line.second));
         }
 
         if (line.first == Op)

@@ -183,6 +183,30 @@ TEST(ParsedDataFactoryTest, ReportsCigarErrorsWithoutThrowing)
     }
 }
 
+TEST(ParsedDataFactoryTest, MissingMDTagReturnsErrorWithoutThrowing)
+{
+    const recordLine_struct_t raw{"missing_md", "0", "chr1", 1, 60,
+        "10M", "ACGTACGTAC", "IIIIIIIIII", {}};
+    parsedRecordResult result = parsedRecordError::SUCCESS;
+
+    ASSERT_NO_THROW(result = parsedData::parseRawData(raw));
+    const auto* error = std::get_if<parsedRecordError>(&result);
+    ASSERT_NE(error, nullptr);
+    EXPECT_EQ(*error, parsedRecordError::MD_TAG_NOT_EXIST);
+}
+
+TEST(ParsedDataFactoryTest, EmptyMDTagReturnsErrorWithoutThrowing)
+{
+    const recordLine_struct_t raw{"empty_md", "0", "chr1", 1, 60,
+        "10M", "ACGTACGTAC", "IIIIIIIIII", {{"MD", {'Z', ""}}}};
+    parsedRecordResult result = parsedRecordError::SUCCESS;
+
+    ASSERT_NO_THROW(result = parsedData::parseRawData(raw));
+    const auto* error = std::get_if<parsedRecordError>(&result);
+    ASSERT_NE(error, nullptr);
+    EXPECT_EQ(*error, parsedRecordError::MD_TAG_EMPTY);
+}
+
 TEST(ParsedDataFactoryTest, PreservesSourceAndOwnsParsedCigar)
 {
     auto raw = standardLine;

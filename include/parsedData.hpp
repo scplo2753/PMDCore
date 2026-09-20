@@ -15,7 +15,9 @@ enum class parsedRecordError
     CIGAR_EMPTY,
     BAD_CIGAR_FORMAT,
     INVALID_CIGAR_OPERATION,
-    INVALID_CIGAR_STEP
+    INVALID_CIGAR_STEP,
+    MD_TAG_NOT_EXIST,
+    MD_TAG_EMPTY
 };
 
 class parsedData;
@@ -83,6 +85,10 @@ private:
  // functions
  std::vector<std::size_t> getOpListInCIGAR(char Op);
  [[nodiscard]] static parsedRecordError parseCIGAR(const recordLine_struct_t& raw_data, CIGARList_t& output);
+
+ // factoy functions
+     static bool factory_isTagNotExists(const recordLine_struct_t& data, const std::string& tag);
+     static bool factory_isTagValueEmpty(const recordLine_struct_t& raw_data, const std::string& Tag);
 
  recordLine_struct_t data;
  CIGARList_t cigar_list;

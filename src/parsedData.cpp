@@ -37,6 +37,17 @@ parsedRecordResult parsedData::parseRawData(const recordLine_struct_t& raw_data)
         return parse_status;
     }
 
+    if (factory_isTagNotExists(raw_data, "MD"))
+    {
+        std::cerr<<"Warning: "<<raw_data.QNAME<<" has no MD tag, this line will be skipped.\n";
+        return parsedRecordError::MD_TAG_NOT_EXIST;
+    }
+    else if (factory_isTagValueEmpty(raw_data, "MD"))
+    {
+        std::cerr<<"Warning: "<<raw_data.QNAME<<" has an empty MD tag, this line will be skipped.\n";
+        return parsedRecordError::MD_TAG_EMPTY;
+    }
+
     return parsedData(raw_data,std::move(cigar_list));
 }
 
@@ -68,6 +79,11 @@ bool parsedData::isStatusFlagSet(SamFlag flag) const
     }
 }
 
+bool parsedData::factory_isTagNotExists(const recordLine_struct_t &data, const std::string &tag)
+{
+    return !data.options_map.contains(tag);
+}
+
 bool parsedData::isTagExists(const std::string& tag) const
 {
     if (data.options_map.find(tag) != data.options_map.end())
@@ -75,6 +91,11 @@ bool parsedData::isTagExists(const std::string& tag) const
         return true;
     }
     return false;
+}
+
+bool parsedData::factory_isTagValueEmpty(const recordLine_struct_t& raw_data, const std::string& tag)
+{
+    return raw_data.options_map.at(tag).value.empty();
 }
 
 std::string parsedData::getTagValue(const std::string& tag) const

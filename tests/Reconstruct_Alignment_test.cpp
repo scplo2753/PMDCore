@@ -35,14 +35,3 @@ TEST(ReconstructAlignmentTest, ReversedReadProducesReverseComplementRefSeq)
     EXPECT_EQ("..........", result.alignment);
     EXPECT_EQ("GTACGTACGT", result.ref_seq);
 }
-
-TEST(ReconstructAlignmentTest, MissingMDTagReturnsError)
-{
-    recordLine_struct_t raw_data{"read4", "0", "chr1", 1, 60, "10M", "ACGTACGTAC", "IIIIIIIIII", {}};
-    auto parsed = requireParsedRecord(raw_data);
-    alignnmentData_t result{};
-
-    EXPECT_EQ(-1, ReconstructAlignmentAndRefSeq(parsed, result));
-    EXPECT_TRUE(result.alignment.empty());
-    EXPECT_TRUE(result.ref_seq.empty());
-}

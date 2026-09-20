@@ -91,7 +91,6 @@ int ReconstructAlignmentAndRefSeq(parsedData &data, alignnmentData_t &alignnment
     std::vector<std::string> md_list = data.getMDList();
     if(md_list.empty())
     {
-        std::cout << "Warning: MD tag is missing. This line will be skipped." << std::endl;
         return -1;
     }
     int current_pos = 0;

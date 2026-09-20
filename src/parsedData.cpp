@@ -109,15 +109,14 @@ std::string parsedData::getTagValue(const std::string& tag) const
 }
 
 /******
-* @brief return splited MD tag, if the tag does not exist, return an empty vector. The MD tag is split into numbers and non-numbers, for example, "10A5^C3" will be split into ["10", "A", "5", "^C", "3"].
+* @brief return splited MD tag, The MD tag is split into numbers and non-numbers, for example, "10A5^C3" will be split into ["10", "A", "5", "^C", "3"].
 * @returns return splitd MD tags if exists, else return empty vector. 
 *******/
 std::vector<std::string> parsedData::getMDList() const
 {
     std::vector<std::string> md_list;
-    if(isTagExists("MD"))
-    {
-        const std::string &md_value = getMDTagValue();
+
+    const std::string& md_value = getMDTagValue();
 
         size_t pos = 0;
         const size_t md_value_size = md_value.size();
@@ -126,13 +125,12 @@ std::vector<std::string> parsedData::getMDList() const
             char c = md_value[pos];
             if (c >= '0' && c <= '9')
             {
-                int value = 0;
+            const auto start = pos;
                 while (pos < md_value_size && md_value[pos] >= '0' && md_value[pos] <= '9')
                 {
-                    value = value * 10 + (md_value[pos] - '0');
                     ++pos;
                 }
-                md_list.emplace_back(std::to_string(value));
+            md_list.emplace_back(md_value.substr(start, pos - start));
             }
             else if (c == '^')
             {
@@ -151,7 +149,6 @@ std::vector<std::string> parsedData::getMDList() const
             }
             else
                 ++pos;
-        }
     }
     return md_list;
 }

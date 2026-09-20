@@ -1,13 +1,13 @@
 #pragma once
-#include <sys/stat.h>
-#include "sam/enum_flags.hpp"
-#include "sam/struct_record.hpp"
+
 #include <cstddef>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <algorithm>
+
+#include "sam/enum_flags.hpp"
+#include "sam/struct_record.hpp"
 
 enum class parsedRecordError
 {

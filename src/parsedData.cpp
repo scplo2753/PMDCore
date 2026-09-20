@@ -1,12 +1,17 @@
 #include "parsedData.hpp"
+
 #include <algorithm>
-#include <cctype>
-#include <iostream>
-#include <stdexcept>
 #include <charconv>
+#include <cstddef>
+#include <iostream>
 #include <limits>
+#include <stdexcept>
 #include <string>
-#include "sam/struct_record.hpp"
+#include <string_view>
+#include <system_error>
+#include <utility>
+#include <vector>
+
 #include "utilities/sequence_utils.hpp"
 
 static bool isCigarOp(char c)
